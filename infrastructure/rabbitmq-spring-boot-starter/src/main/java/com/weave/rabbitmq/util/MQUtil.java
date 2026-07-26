@@ -106,21 +106,6 @@ public class MQUtil {
     }
 
     /**
-     * 发送用户登录事件
-     */
-    public void cacheUserInfo(Long userId) {
-        try{
-            rabbitTemplate.convertAndSend(
-                    MQueue. TOPIC_EXCHANGE,
-                    MQueue.USER_CACHE_ROUTING_KEY,
-                    userId
-            );
-        }catch (Exception e){
-            log.error("发送用户登录事件失败");
-        }
-    }
-
-    /**
      * 推送聊天消息
      */
     public void pushChatMessage(Object message) {

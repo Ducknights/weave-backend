@@ -83,8 +83,6 @@ public class AuthService {
                 UserDto userDto = new UserDto(userId, userBriefDto.getName(), userBriefDto.getAvatar(), roleNames);
                 // 构建响应DTO
                 apiResponseDto = new ApiResponseDto(tokenDto, userDto);
-                // 发送用户登录事件
-                mqUtil.cacheUserInfo(userId);
             }
         } catch (Exception e) {
             log.error("登录失败: {}", e.getMessage(), e);
@@ -158,9 +156,7 @@ public class AuthService {
             String access_token = JwtUtil.generateJwtToken(subject, ACCESS_TOKEN_EXPIRE_TIME);
             // 2. 缓存用户权限
             cacheUserAuthorities(userId);
-            // 3. 缓存用户信息
-            mqUtil.cacheUserInfo(userId);
-            // 4. 构造返回DTO
+            // 3. 构造返回DTO
             return new TokenDto(access_token, ACCESS_TOKEN_EXPIRE_TIME,null , null);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
@@ -174,9 +170,7 @@ public class AuthService {
             String refresh_token = JwtUtil.generateJwtToken(subject, REFRESH_TOKEN_EXPIRE_TIME);
             // 2. 重新缓存用户权限信息
             cacheUserAuthorities(userId);
-            // 3. 缓存用户信息
-            mqUtil.cacheUserInfo(userId);
-            // 4. 构造返回DTO
+            // 3. 构造返回DTO
             return new TokenDto(null,null , refresh_token, REFRESH_TOKEN_EXPIRE_TIME);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
