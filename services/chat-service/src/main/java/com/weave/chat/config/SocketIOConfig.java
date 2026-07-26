@@ -55,7 +55,7 @@ public class SocketIOConfig {
             }
             try {
                 String subject = JwtUtil.getJwtSubject(token);
-                String userIdStr = subject.substring(subject.indexOf("::") + 2);
+                String userIdStr = subject.substring(subject.lastIndexOf(":") + 1);
                 Long userId = Long.valueOf(userIdStr);
                 String key = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
                 if (Boolean.FALSE.equals(redisUtil.hasKey(key))) {

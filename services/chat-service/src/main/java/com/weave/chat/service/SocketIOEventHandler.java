@@ -6,6 +6,7 @@ import com.corundumstudio.socketio.SocketIOServer;
 import com.corundumstudio.socketio.annotation.OnConnect;
 import com.corundumstudio.socketio.annotation.OnDisconnect;
 import com.corundumstudio.socketio.annotation.OnEvent;
+import com.weave.redis.util.RedisUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
@@ -30,6 +31,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +52,8 @@ public class SocketIOEventHandler {
     private ConversationMemberService conversationMemberService;
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+    @Resource
+    private RedisUtil redisUtil;
     @Resource
     private MQUtil mqUtil;
     // 用户ID -> SocketIOClient 映射
@@ -81,7 +85,7 @@ public class SocketIOEventHandler {
         Long userId = getUserIdFromToken(client);
         client.set(USER_ID, userId);
         onlineClients.put(userId, client);
-        redisTemplate.opsForValue().set(CacheKey.buildCacheKey(CacheKey.USER_ONLINE, userId), "true", 90, TimeUnit.SECONDS);
+        redisUtil.set(CacheKey.buildCacheKey(CacheKey.USER_ONLINE, userId), "true", Duration.ofSeconds(90));
         log.info("用户上线: userId={}, sessionId={}", userId, client.getSessionId());
     }
 
@@ -97,10 +101,7 @@ public class SocketIOEventHandler {
         taskScheduler.schedule(
                 () -> {
                     if (!onlineClients.containsKey(userId)) {
-                        redisTemplate.delete(
-                                CacheKey.buildCacheKey(
-                                        CacheKey.USER_ONLINE, userId));
-
+                        redisUtil.delete(CacheKey.buildCacheKey(CacheKey.USER_ONLINE, userId));
                         log.info("用户真正下线: {}", userId);
                     }
                 },
@@ -224,7 +225,7 @@ public class SocketIOEventHandler {
     private Long getUserIdFromToken(SocketIOClient client) {
         String token = client.getHandshakeData().getSingleUrlParam("token");
         String subject = JwtUtil.getJwtSubject(token);
-        String userIdStr = subject.substring(subject.indexOf("::") + 2);
+        String userIdStr = subject.substring(subject.lastIndexOf(":") + 1);
         return Long.valueOf(userIdStr);
     }
 }
