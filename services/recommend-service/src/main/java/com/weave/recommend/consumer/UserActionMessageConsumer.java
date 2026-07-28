@@ -4,7 +4,7 @@ import com.weave.recommend.service.ActionService;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.rabbitmq.constant.MQueue;
 import com.weave.model.constant.PostOperation;
-import com.weave.model.model.PostActionMessage;
+import com.weave.model.model.dto.PostActionMessageDto;
 import com.weave.recommend.model.dto.ActionDto;
 import com.weave.recommend.model.enums.ActionEnum;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -39,7 +39,7 @@ public class UserActionMessageConsumer {
 
     /** 监听帖子操作队列 */
     @RabbitListener(queues = MQueue.POST_ACTION_QUEUE_2)
-    public void handlePostAction(PostActionMessage message) {
+    public void handlePostAction(PostActionMessageDto message) {
         String action = message.getAction();
         ActionEnum type = ACTION_TYPE_MAP.get(action);
 

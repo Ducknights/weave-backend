@@ -1,5 +1,7 @@
 package com.weave.auth.controller;
 
+import com.weave.auth.model.dto.ApiResponseDto;
+import com.weave.auth.model.dto.TokenDto;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -22,22 +24,22 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResult<?>> login(@Valid @NotNull @RequestBody ApiRequestDto apiRequestDto) {
+    public ResponseEntity<ApiResult<ApiResponseDto>> login(@Valid @NotNull @RequestBody ApiRequestDto apiRequestDto) {
         log.info("login: {}", apiRequestDto);
-        var apiResult = authService.login(apiRequestDto);
+        ApiResponseDto apiResult = authService.login(apiRequestDto);
         return ResponseEntity.ok()
                 .body(AuthApiStatus.LOGIN_SUCCESS.response(apiResult));
     }
 
     @PostMapping("/register/code")
-    public ResponseEntity<ApiResult<?>> sendCode(@Valid @NotNull @RequestBody ApiRequestDto apiRequestDto) {
+    public ResponseEntity<ApiResult<Void>> sendCode(@Valid @NotNull @RequestBody ApiRequestDto apiRequestDto) {
         authService.sendCode(apiRequestDto);
         return ResponseEntity.ok()
                 .body(AuthApiStatus.CODE_SEND_SUCCESS.response());
     }
 
     @PostMapping("/register/code/verify")
-    public ResponseEntity<ApiResult<?>> verify(@Valid @NotNull @RequestBody VerifyCodeDto dto) {
+    public ResponseEntity<ApiResult<Void>> verify(@Valid @NotNull @RequestBody VerifyCodeDto dto) {
         log.info("verify: {}", dto);
         authService.verifyCode(dto);
         return ResponseEntity.status(201)
@@ -45,7 +47,7 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResult<?>> logout() {
+    public ResponseEntity<ApiResult<Void>> logout() {
         Long userId = SecurityUtils.getCurrentUserId();
         authService.logout(userId);
         return ResponseEntity.ok()
@@ -53,22 +55,22 @@ public class AuthController {
     }
 
     @GetMapping("/access")
-    public ResponseEntity<ApiResult<?>> getNewToken(@RequestHeader(com.weave.model.constant.RequestHeader.X_USER_ID) String userId) {
+    public ResponseEntity<ApiResult<TokenDto>> getNewToken(@RequestHeader(com.weave.model.constant.RequestHeader.X_USER_ID) String userId) {
         log.info("getNewToken: {}", userId);
-        var token = authService.getNewSuccessToken(Long.valueOf(userId));
+        TokenDto dto = authService.getNewSuccessToken(Long.valueOf(userId));
         return ResponseEntity.ok()
-                .body(AuthApiStatus.NEW_TOKEN_SUCCESS.response(token));
+                .body(AuthApiStatus.NEW_TOKEN_SUCCESS.response(dto));
     }
 
     @GetMapping("/refresh")
-    public ResponseEntity<ApiResult<?>> getNewRefreshToken(@RequestHeader(com.weave.model.constant.RequestHeader.X_USER_ID) String userId) {
-        var token = authService.getNewRefreshToken(Long.valueOf(userId));
+    public ResponseEntity<ApiResult<TokenDto>> getNewRefreshToken(@RequestHeader(com.weave.model.constant.RequestHeader.X_USER_ID) String userId) {
+        TokenDto dto = authService.getNewRefreshToken(Long.valueOf(userId));
         return ResponseEntity.ok()
-                .body(AuthApiStatus.NEW_TOKEN_SUCCESS.response(token));
+                .body(AuthApiStatus.NEW_TOKEN_SUCCESS.response(dto));
     }
 
     @GetMapping("/health")
-    public ResponseEntity<?> healthCheck() {
+    public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok().body("服务运行正常");
     }
 }

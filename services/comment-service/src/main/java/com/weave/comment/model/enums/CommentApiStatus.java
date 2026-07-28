@@ -55,7 +55,7 @@ public enum CommentApiStatus implements ApiStatus {
         this.msg = msg;
     }
 
-    public ApiResult<?> response() {
+    public ApiResult<Void> response() {
         return response(null);
     }
 

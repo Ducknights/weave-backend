@@ -1,6 +1,7 @@
 package com.weave.draft.controller;
 
 import com.weave.draft.model.dto.DraftDto;
+import com.weave.model.model.ApiResult;
 import com.weave.draft.model.dto.ReviewDto;
 import com.weave.draft.model.enums.DraftApiStatus;
 import com.weave.draft.model.vo.DraftVo;
@@ -31,7 +32,7 @@ public class DraftController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('USER', 'OFFICER')")
-    public ResponseEntity<?> saveDraft(@RequestBody DraftDto draftDto) {
+    public ResponseEntity<ApiResult<Long>> saveDraft(@RequestBody DraftDto draftDto) {
         Long userId = SecurityUtils.getCurrentUserId();
         Long draftId = draftService.saveDraft(userId, draftDto);
         return ResponseEntity.ok(DraftApiStatus.SAVE_DRAFT_SUCCESS.response(draftId));
@@ -43,7 +44,7 @@ public class DraftController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'OFFICER')")
-    public ResponseEntity<?> updateDraft(@PathVariable Long id, @RequestBody DraftDto draftDto) {
+    public ResponseEntity<ApiResult<Void>> updateDraft(@PathVariable Long id, @RequestBody DraftDto draftDto) {
         Long userId = SecurityUtils.getCurrentUserId();
         draftService.updateDraft(id, userId, draftDto);
         return ResponseEntity.ok(DraftApiStatus.UPDATE_SUCCESS.response());
@@ -55,7 +56,7 @@ public class DraftController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('USER', 'OFFICER')")
-    public ResponseEntity<?> deleteDraft(@PathVariable Long id) {
+    public ResponseEntity<ApiResult<Void>> deleteDraft(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         draftService.deleteDraft(id, userId);
         return ResponseEntity.ok(DraftApiStatus.DELETE_SUCCESS.response());
@@ -67,7 +68,7 @@ public class DraftController {
      */
     @PutMapping("/{id}/submit")
     @PreAuthorize("hasAnyRole('USER', 'OFFICER')")
-    public ResponseEntity<?> submitForReview(@PathVariable Long id) {
+    public ResponseEntity<ApiResult<Void>> submitForReview(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         draftService.submitForReview(id, userId);
         return ResponseEntity.ok(DraftApiStatus.SUBMIT_SUCCESS.response());
@@ -79,7 +80,7 @@ public class DraftController {
      */
     @PutMapping("/{id}/approve")
     @PreAuthorize("hasAnyRole('ADMIN', 'OFFICER')")
-    public ResponseEntity<?> approve(@PathVariable Long id, @RequestBody(required = false) ReviewDto reviewDto) {
+    public ResponseEntity<ApiResult<Void>> approve(@PathVariable Long id, @RequestBody(required = false) ReviewDto reviewDto) {
         Long reviewerId = SecurityUtils.getCurrentUserId();
         String remark = reviewDto == null ? null : reviewDto.getRemark();
         draftService.approve(id, reviewerId, remark);
@@ -92,7 +93,7 @@ public class DraftController {
      */
     @PutMapping("/{id}/reject")
     @PreAuthorize("hasAnyRole('ADMIN', 'OFFICER')")
-    public ResponseEntity<?> reject(@PathVariable Long id, @RequestBody(required = false) ReviewDto reviewDto) {
+    public ResponseEntity<ApiResult<Void>> reject(@PathVariable Long id, @RequestBody(required = false) ReviewDto reviewDto) {
         Long reviewerId = SecurityUtils.getCurrentUserId();
         String remark = reviewDto == null ? null : reviewDto.getRemark();
         draftService.reject(id, reviewerId, remark);
@@ -100,39 +101,15 @@ public class DraftController {
     }
 
     /**
-     * 获取草稿详情
+     * 获取当前用户的草稿详情
      * GET /api/draft/{id}
      */
-    @GetMapping("/{id}")
+    @GetMapping()
     @PreAuthorize("hasAnyRole('USER', 'OFFICER')")
-    public ResponseEntity<?> getDraftDetail(@PathVariable Long id) {
+    public ResponseEntity<ApiResult<DraftVo>> getDraftDetail() {
         Long userId = SecurityUtils.getCurrentUserId();
-        DraftVo vo = draftService.getDraftDetail(id, userId);
+        DraftVo vo = draftService.getDraftDetail(userId);
         return ResponseEntity.ok(DraftApiStatus.SUCCESS.response(vo));
-    }
-
-    /**
-     * 获取当前用户的草稿列表
-     * GET /api/draft
-     */
-    @GetMapping
-    @PreAuthorize("hasAnyRole('USER', 'OFFICER')")
-    public ResponseEntity<?> getMyDrafts() {
-        Long userId = SecurityUtils.getCurrentUserId();
-        List<DraftVo> vos = draftService.getMyDrafts(userId);
-        return ResponseEntity.ok(DraftApiStatus.SUCCESS.response(vos));
-    }
-
-    /**
-     * 获取当前用户待审核的草稿列表
-     * GET /api/draft/pending
-     */
-    @GetMapping("/pending")
-    @PreAuthorize("hasAnyRole('USER', 'OFFICER')")
-    public ResponseEntity<?> getMyPendingDrafts() {
-        Long userId = SecurityUtils.getCurrentUserId();
-        List<DraftVo> vos = draftService.getMyPendingDrafts(userId);
-        return ResponseEntity.ok(DraftApiStatus.SUCCESS.response(vos));
     }
 
     /**
@@ -141,13 +118,13 @@ public class DraftController {
      */
     @GetMapping("/review")
     @PreAuthorize("hasAnyRole('ADMIN', 'OFFICER')")
-    public ResponseEntity<?> getAllPendingDrafts() {
+    public ResponseEntity<ApiResult<List<DraftVo>>> getAllPendingDrafts() {
         List<DraftVo> vos = draftService.getAllPendingDrafts();
         return ResponseEntity.ok(DraftApiStatus.SUCCESS.response(vos));
     }
 
     @GetMapping("/health")
-    public ResponseEntity<?> healthCheck() {
+    public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok("草稿服务运行正常");
     }
 }

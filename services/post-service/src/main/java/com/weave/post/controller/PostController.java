@@ -4,6 +4,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.log4j.Log4j2;
 import com.weave.post.model.dto.PostDto;
 import com.weave.post.model.enums.PostApiStatus;
+import com.weave.model.model.ApiResult;
 import com.weave.model.model.dto.PostDetailVo;
 import com.weave.post.service.PostCommandService;
 import com.weave.post.service.PostQueryService;
@@ -30,7 +31,7 @@ public class PostController {
      * @return 返回推荐的帖子对象列表，如果列表为空则返回404
      */
     @PostMapping("/recommend")
-    public ResponseEntity<?> getRecommendPosts(@RequestParam(defaultValue = "10") Integer limit) {
+    public ResponseEntity<ApiResult<List<PostDetailVo>>> getRecommendPosts(@RequestParam(defaultValue = "10") Integer limit) {
         Long userId = SecurityUtils.getCurrentUserId();
         log.info("用户 {} 请求推荐帖子，限制数量: {}", userId, limit);
         List<PostDetailVo> postVos = postQueryService.getRecommendPosts(userId,limit);
@@ -46,7 +47,7 @@ public class PostController {
      * @return 返回热门的帖子对象列表，如果列表为空则返回404
      */
     @GetMapping("/hot")
-    public ResponseEntity<?> getHotPosts(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize) {
+    public ResponseEntity<ApiResult<List<PostDetailVo>>> getHotPosts(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize) {
         List<PostDetailVo> postVos = postQueryService.getHotPosts(pageNum, pageSize);
         return ResponseEntity.ok().body(PostApiStatus.SUCCESS.response(postVos));
     }
@@ -60,13 +61,13 @@ public class PostController {
      * @return 返回最新的帖子对象列表
      */
     @GetMapping("/new")
-    public ResponseEntity<?> getNewPosts(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize) {
+    public ResponseEntity<ApiResult<List<PostDetailVo>>> getNewPosts(@RequestParam(defaultValue = "1") int pageNum, @RequestParam(defaultValue = "10") int pageSize) {
         List<PostDetailVo> postVos = postQueryService.getNewPosts(pageNum, pageSize);
         return ResponseEntity.ok().body(PostApiStatus.SUCCESS.response(postVos));
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<?> getPostsByUser(@PathVariable Long userId) {
+    public ResponseEntity<ApiResult<List<PostDetailVo>>> getPostsByUser(@PathVariable Long userId) {
         List<PostDetailVo> postVos = postQueryService.getPostsByUser(userId);
         return ResponseEntity.ok().body(PostApiStatus.SUCCESS.response(postVos));
     }
@@ -79,7 +80,7 @@ public class PostController {
      * @return 返回帖子详情
      */
     @GetMapping("/{id}")
-    public ResponseEntity<?> clickForDetails(@PathVariable Long id) {
+    public ResponseEntity<ApiResult<List<PostDetailVo>>> clickForDetails(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         log.info("用户 {} 请求帖子详情，帖子ID: {}", userId, id);
         List<PostDetailVo> postVo = postQueryService.clickForDetails(id, userId);
@@ -107,7 +108,7 @@ public class PostController {
      * @return 返回更新成功的帖子对象，如果帖子不存在则返回404
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updatePost(@PathVariable Long id, @RequestBody PostDto postDto) {
+    public ResponseEntity<ApiResult<Void>> updatePost(@PathVariable Long id, @RequestBody PostDto postDto) {
         Long userId = SecurityUtils.getCurrentUserId();
         postCommandService.updatePost(id, userId, postDto);
         return ResponseEntity.ok().body(PostApiStatus.UPDATE_SUCCESS.response());
@@ -121,7 +122,7 @@ public class PostController {
      * @return 返回删除成功的消息，如果帖子不存在则返回404
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deletePost(@PathVariable Long id) {
+    public ResponseEntity<ApiResult<Void>> deletePost(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         postCommandService.deletePost(id, userId);
         return ResponseEntity.ok().body(PostApiStatus.DELETE_SUCCESS.response());
@@ -131,7 +132,7 @@ public class PostController {
      * 隐藏帖子: PUBLISHED -> HIDDEN
      */
     @PutMapping("/{id}/hide")
-    public ResponseEntity<?> hidePost(@PathVariable Long id) {
+    public ResponseEntity<ApiResult<Void>> hidePost(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         postCommandService.hidePost(id, userId);
         return ResponseEntity.ok(PostApiStatus.SUCCESS.response());
@@ -141,7 +142,7 @@ public class PostController {
      * 获取当前用户隐藏的帖子
      */
     @GetMapping("/hidden")
-    public ResponseEntity<?> getHiddenPosts() {
+    public ResponseEntity<ApiResult<List<PostDetailVo>>> getHiddenPosts() {
         Long userId = SecurityUtils.getCurrentUserId();
         List<PostDetailVo> postVos = postQueryService.getHiddenPostsByUserId(userId);
         return ResponseEntity.ok().body(PostApiStatus.SUCCESS.response(postVos));
@@ -151,14 +152,14 @@ public class PostController {
      * 恢复帖子: HIDDEN -> PUBLISHED
      */
     @PutMapping("/{id}/restore")
-    public ResponseEntity<?> restorePost(@PathVariable Long id) {
+    public ResponseEntity<ApiResult<Void>> restorePost(@PathVariable Long id) {
         Long userId = SecurityUtils.getCurrentUserId();
         postCommandService.restorePost(id, userId);
         return ResponseEntity.ok(PostApiStatus.SUCCESS.response());
     }
 
     @GetMapping("/health")
-    public ResponseEntity<?> healthCheck() {
+    public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok().body("服务运行正常");
     }
 }

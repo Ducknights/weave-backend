@@ -6,6 +6,7 @@ package com.weave.club.controller;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Resource;
+import com.weave.model.model.ApiResult;
 import com.weave.model.model.dto.ClubBriefDto;
 import com.weave.club.model.entity.Club;
 import com.weave.club.model.vo.ClubCardVo;
@@ -32,7 +33,7 @@ public class ClubController {
      * @return 创建成功的俱乐部信息
      */
     @PostMapping()
-    public ResponseEntity<?> createClub(@Nonnull @RequestBody Club club) {
+    public ResponseEntity<ApiResult<Club>> createClub(@Nonnull @RequestBody Club club) {
         final Club newClub = clubService.createClub(club);
         return ResponseEntity.status(ClubApiStatus.POST_SUCCESS.getCode())
                 .body(ClubApiStatus.POST_SUCCESS.response(newClub));
@@ -42,7 +43,7 @@ public class ClubController {
      * 加入俱乐部
      */
     @PostMapping("/join")
-    public ResponseEntity<?> joinClub(@RequestParam Integer clubId) {
+    public ResponseEntity<ApiResult<Void>> joinClub(@RequestParam Integer clubId) {
         Long userId = SecurityUtils.getCurrentUserId();
         clubService.joinClub(clubId, userId);
         return ResponseEntity.status(ClubApiStatus.POST_SUCCESS.getCode())
@@ -56,7 +57,7 @@ public class ClubController {
      * @return 删除成功
      */
     @DeleteMapping()
-    public ResponseEntity<?> deleteClub(@Nonnull @RequestBody Integer clubId) {
+    public ResponseEntity<ApiResult<Void>> deleteClub(@Nonnull @RequestBody Integer clubId) {
         clubService.deleteClub(clubId);
         return ResponseEntity.status(ClubApiStatus.DELETE_SUCCESS.getCode())
                 .body(ClubApiStatus.DELETE_SUCCESS.response());
@@ -69,7 +70,7 @@ public class ClubController {
      * @return 更新成功的俱乐部信息
      */
     @PutMapping()
-    public ResponseEntity<?> updateClub(@Nonnull @RequestBody Club club) {
+    public ResponseEntity<ApiResult<Club>> updateClub(@Nonnull @RequestBody Club club) {
         final Club newClub = clubService.updateClub(club);
         return ResponseEntity.status(ClubApiStatus.PUT_SUCCESS.getCode())
                 .body(ClubApiStatus.PUT_SUCCESS.response(newClub));
@@ -89,7 +90,7 @@ public class ClubController {
      * @return 所有俱乐部信息
      */
     @GetMapping("/clubs")
-    public ResponseEntity<?> getClubs() {
+    public ResponseEntity<ApiResult<List<ClubCardVo>>> getClubs() {
         final List<ClubCardVo> clubCardVos = clubService.queryClubs();
         return ResponseEntity.status(ClubApiStatus.GET_SUCCESS.getCode())
                 .body(ClubApiStatus.GET_SUCCESS.response(clubCardVos));
@@ -102,14 +103,14 @@ public class ClubController {
      * @return 俱乐部信息
      */
     @GetMapping("{clubId}")
-    public ResponseEntity<?> getClubById(@PathVariable Integer clubId) {
+    public ResponseEntity<ApiResult<ClubCardVo>> getClubById(@PathVariable Integer clubId) {
         final ClubCardVo club = clubService.getClubById(clubId);
         return ResponseEntity.status(ClubApiStatus.GET_SUCCESS.getCode())
                 .body(ClubApiStatus.GET_SUCCESS.response(club));
     }
 
     @GetMapping("/health")
-    public ResponseEntity<?> healthCheck() {
+    public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok().body("服务运行正常");
     }
 }

@@ -23,7 +23,7 @@ public class RecommendController {
     }
 
     @GetMapping("/health")
-    public ResponseEntity<?> healthCheck() {
+    public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok().body("服务运行正常");
     }
 }

@@ -6,6 +6,7 @@ package com.weave.club.controller;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Resource;
+import com.weave.model.model.ApiResult;
 import com.weave.club.model.entity.Member;
 import com.weave.club.model.enums.ClubApiStatus;
 import com.weave.club.service.MemberService;
@@ -27,7 +28,7 @@ public class MemberController {
      * @return 响应结果
      */
     @DeleteMapping()
-    public ResponseEntity<?> deleteMember(@Nonnull @RequestBody Integer memberId) {
+    public ResponseEntity<ApiResult<Void>> deleteMember(@Nonnull @RequestBody Integer memberId) {
         memberService.deleteMember(memberId);
         return ResponseEntity.status(ClubApiStatus.DELETE_SUCCESS.getCode())
                 .body(ClubApiStatus.DELETE_SUCCESS.response());
@@ -39,7 +40,7 @@ public class MemberController {
      * @return 响应结果，包含更新后的成员信息
      */
     @PutMapping()
-    public ResponseEntity<?> updateMember(@Nonnull @RequestBody Member member) {
+    public ResponseEntity<ApiResult<Member>> updateMember(@Nonnull @RequestBody Member member) {
         final Member newMember = memberService.updateMember(member);
         return ResponseEntity.status(ClubApiStatus.PUT_SUCCESS.getCode())
                 .body(ClubApiStatus.PUT_SUCCESS.response(newMember));
@@ -51,7 +52,7 @@ public class MemberController {
      * @return 响应结果，包含指定社团的所有成员列表
      */
     @GetMapping
-    public ResponseEntity<?> getMembersByClubId(@PathVariable Integer clubId) {
+    public ResponseEntity<ApiResult<List<Member>>> getMembersByClubId(@PathVariable Integer clubId) {
         final List<Member> members = memberService.getMembersByClubId(clubId);
         return ResponseEntity.status(ClubApiStatus.GET_SUCCESS.getCode())
                 .body(ClubApiStatus.GET_SUCCESS.response(members));
@@ -63,7 +64,7 @@ public class MemberController {
      * @return 响应结果，包含指定ID的成员信息
      */
     @GetMapping("/{memberId}")
-    public ResponseEntity<?> getMemberById(@PathVariable Integer memberId) {
+    public ResponseEntity<ApiResult<Member>> getMemberById(@PathVariable Integer memberId) {
         final Member member = memberService.getMemberById(memberId);
         return ResponseEntity.status(ClubApiStatus.GET_SUCCESS.getCode())
                 .body(ClubApiStatus.GET_SUCCESS.response(member));

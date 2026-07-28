@@ -19,7 +19,7 @@ import java.util.Set;
 
 @Log4j2
 @RestController
-@RequestMapping("/api/user/info")
+@RequestMapping("/api/user")
 public class UserInfoController {
 
     @Resource
@@ -31,7 +31,7 @@ public class UserInfoController {
      * @param user 包含用户注册信息的AuthUserDto对象，通过请求体传递
      * @return UserInfo 返回创建成功的用户信息对象
      */
-    @PostMapping()
+    @PostMapping("/info")
     public UserInfo createUser(@RequestBody AuthUserDto user) {
         return userInfoService.createUser(user);
     }
@@ -42,7 +42,7 @@ public class UserInfoController {
      * @param id 用户ID，通过路径变量传递
      * @return UserInfo 返回用户信息对象
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/info")
     public UserBriefDto getUserById(@PathVariable Long id) {
         log.info("收到请求{}",id);
         return userInfoService.getUserBriefDtoById(id);
@@ -54,8 +54,8 @@ public class UserInfoController {
      * @param id 用户ID，通过路径变量传递
      * @return UserInfoDto 返回用户详细信息对象
      */
-    @GetMapping("/detail/{id}")
-    public ResponseEntity<ApiResult<?>> getUserDetailById(@PathVariable Long id) {
+    @GetMapping("/{id}/detail")
+    public ResponseEntity<ApiResult<UserInfoVo>> getUserDetailById(@PathVariable Long id) {
         UserInfoVo vo = userInfoService.getUserInfoDtoById(id);
         return ResponseEntity.ok().body(UserApiStatus.SUCCESS.response(vo));
     }
@@ -66,16 +66,15 @@ public class UserInfoController {
      * @param ids 用户ID集合
      * @return 返回一个Map，键为用户ID，值为对应的用户信息对象
      */
-    @PostMapping("/batch")
+    @PostMapping("/info/batch")
     public Map<Long, UserBriefDto> getUserInfosByIds(@RequestBody Set<Long> ids) {
         return userInfoService.getUserInfosByIds(ids);
     }
 
     /**
      * 更新用户信息
-     *
      */
-    @PutMapping()
+    @PutMapping("/info")
     public UpdateUserInfoDto updateUser(@RequestBody UpdateUserInfoDto user) {
         Long userId = SecurityUtils.getCurrentUserId();
         user.setId(userId);
@@ -83,7 +82,7 @@ public class UserInfoController {
     }
 
     @GetMapping("/health")
-    public ResponseEntity<?> healthCheck() {
+    public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok().body("服务运行正常");
     }
 }

@@ -4,9 +4,6 @@ import lombok.Getter;
 import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
 
-import java.util.Collections;
-import java.util.Map;
-
 /**
  * 用户服务 API 状态码枚举
  * 统一管理用户服务的所有 API 响应状态
@@ -128,8 +125,8 @@ public enum UserApiStatus implements ApiStatus {
         this.msg = msg;
     }
 
-    public ApiResult<Map<String, Object>> response() {
-        return response(Collections.emptyMap());
+    public ApiResult<Void> response() {
+        return response(null );
     }
 
     public <T> ApiResult<T> response(T data) {

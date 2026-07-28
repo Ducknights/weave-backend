@@ -4,6 +4,7 @@ package com.weave.club.controller;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import com.weave.model.model.ApiResult;
 import com.weave.club.model.entity.Activity;
 import com.weave.club.model.enums.ClubApiStatus;
 import com.weave.club.model.vo.ActivityCardVo;
@@ -30,7 +31,7 @@ public class ActivityController {
      * @return 响应结果，包含创建的活动信息
      */
     @PostMapping()
-    public ResponseEntity<?> creatActivity(@Nonnull @RequestBody Activity activity) {
+    public ResponseEntity<ApiResult<Activity>> creatActivity(@Nonnull @RequestBody Activity activity) {
         Activity newActivity = activityService.creatActivity(activity);
         return ResponseEntity.ok()
                 .body(ClubApiStatus.POST_SUCCESS.response(newActivity));
@@ -42,7 +43,7 @@ public class ActivityController {
      * @return 响应结果
      */
     @DeleteMapping()
-    public ResponseEntity<?> deleteActivity(@Nonnull @RequestBody Integer ActivityId) {
+    public ResponseEntity<ApiResult<Void>> deleteActivity(@Nonnull @RequestBody Integer ActivityId) {
         activityService.deleteActivity(ActivityId);
         return ResponseEntity.status(ClubApiStatus.DELETE_SUCCESS.getCode())
                 .body(ClubApiStatus.DELETE_SUCCESS.response());
@@ -54,7 +55,7 @@ public class ActivityController {
      * @return 响应结果，包含更新后的活动信息
      */
     @PutMapping()
-    public ResponseEntity<?> updateActivity(@Nonnull @RequestBody Activity activity) {
+    public ResponseEntity<ApiResult<Activity>> updateActivity(@Nonnull @RequestBody Activity activity) {
         final Activity newActivity = activityService.updateActivity(activity);
         return ResponseEntity.status(ClubApiStatus.PUT_SUCCESS.getCode())
                 .body(ClubApiStatus.PUT_SUCCESS.response(newActivity));
@@ -67,7 +68,7 @@ public class ActivityController {
      * @return 响应结果，包含符合条件的活动列表
      */
     @GetMapping("/week")
-    public ResponseEntity<?> getActivity(
+    public ResponseEntity<ApiResult<List<ActivityCardVo>>> getActivity(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
 
@@ -90,14 +91,14 @@ public class ActivityController {
      * @return 响应结果，包含指定ID的活动信息
      */
     @GetMapping("{ActivityId}")
-    public ResponseEntity<?> getActivityById(@PathVariable Integer ActivityId) {
+    public ResponseEntity<ApiResult<Activity>> getActivityById(@PathVariable Integer ActivityId) {
         final Activity activity = activityService.queryActivityById(ActivityId);
         return ResponseEntity.status(ClubApiStatus.GET_SUCCESS.getCode())
                 .body(ClubApiStatus.GET_SUCCESS.response(activity));
     }
 
     @GetMapping("/club/{clubId}")
-    public ResponseEntity<?> getActivitiesByClubId(@PathVariable Integer clubId) {
+    public ResponseEntity<ApiResult<List<Activity>>> getActivitiesByClubId(@PathVariable Integer clubId) {
         final List<Activity> activities = activityService.getActivitiesByClubId(clubId);
         return ResponseEntity.status(ClubApiStatus.GET_SUCCESS.getCode())
                 .body(ClubApiStatus.GET_SUCCESS.response(activities));

@@ -4,6 +4,7 @@ import com.weave.comment.model.dto.CommentCommand;
 import com.weave.comment.model.dto.CommentVosDto;
 import com.weave.comment.model.enums.CommentApiStatus;
 import com.weave.comment.service.CommentService;
+import com.weave.model.model.ApiResult;
 import jakarta.annotation.Resource;
 import lombok.extern.log4j.Log4j2;
 import com.weave.security.util.SecurityUtils;
@@ -28,7 +29,7 @@ public class CommentController {
      * POST /api/comments
      */
     @PostMapping
-    public ResponseEntity<?> addComment(@RequestBody CommentCommand command) {
+    public ResponseEntity<ApiResult<Void>> addComment(@RequestBody CommentCommand command) {
         commentService.addComment(command);
         return ResponseEntity.status(201)
                 .body(CommentApiStatus.ADD_SUCCESS.response());
@@ -41,7 +42,7 @@ public class CommentController {
      */
     @DeleteMapping("/{commentId}")
     @PreAuthorize("hasAnyRole('USER','ADMIN','OFFICER')")
-    public ResponseEntity<?> deleteComment(
+    public ResponseEntity<ApiResult<Void>> deleteComment(
             @PathVariable String commentId) {
         Long userId = SecurityUtils.getCurrentUserId();
         commentService.deleteComment(commentId, userId);
@@ -54,7 +55,7 @@ public class CommentController {
      * GET /api/comments/post/{postId}/hot
      */
     @GetMapping("/post/{postId}/hot")
-    public ResponseEntity<?> getCommentsByResourceByHot(
+    public ResponseEntity<ApiResult<CommentVosDto>> getCommentsByResourceByHot(
             @PathVariable Long postId,
             @RequestParam(required = false) Integer cursorLikeCount,
             @RequestParam(required = false) String cursorId,
@@ -70,7 +71,7 @@ public class CommentController {
      * GET /api/comments/replies/{commentId}
      */
     @GetMapping("/replies/{commentId}")
-    public ResponseEntity<?> getReplies(
+    public ResponseEntity<ApiResult<CommentVosDto>> getReplies(
             @PathVariable String commentId,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "20") int limit) {
@@ -84,7 +85,7 @@ public class CommentController {
      * POST /api/comment/{commentId}/like
      */
     @PostMapping("/{commentId}/like")
-    public ResponseEntity<?> likeComment(@PathVariable String commentId) {
+    public ResponseEntity<ApiResult<Void>> likeComment(@PathVariable String commentId) {
         Long userId = SecurityUtils.getCurrentUserId();
         log.info("点赞评论: commentId={}, userId={}", commentId, userId);
         commentService.likeComment(commentId, userId);
@@ -96,7 +97,7 @@ public class CommentController {
      * DELETE /api/comment/{commentId}/like
      */
     @DeleteMapping("/{commentId}/like")
-    public ResponseEntity<?> unlikeComment(@PathVariable String commentId) {
+    public ResponseEntity<ApiResult<Void>> unlikeComment(@PathVariable String commentId) {
         Long userId = SecurityUtils.getCurrentUserId();
         log.info("取消点赞评论: commentId={}, userId={}", commentId, userId);
         commentService.unlikeComment(commentId, userId);
@@ -108,7 +109,7 @@ public class CommentController {
      * GET /api/comments/health
      */
     @GetMapping("/health")
-    public ResponseEntity<?> healthCheck() {
+    public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok().body("服务运行正常");
     }
 }

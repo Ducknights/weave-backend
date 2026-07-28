@@ -4,6 +4,7 @@ import com.weave.search.service.ConversionService;
 import com.weave.search.service.SearchService;
 import jakarta.annotation.Resource;
 import lombok.extern.log4j.Log4j2;
+import com.weave.model.model.ApiResult;
 import com.weave.model.model.dto.PostDetailVo;
 import com.weave.search.model.dto.SearchPageDto;
 import com.weave.search.model.dto.SearchResultDto;
@@ -38,7 +39,7 @@ public class SearchController {
      * @return 搜索结果
      */
     @GetMapping("/post")
-    public ResponseEntity<?> searchPost(@RequestParam String keyword,
+    public ResponseEntity<ApiResult<SearchPageDto>> searchPost(@RequestParam String keyword,
                                         @RequestParam(defaultValue = "1") int page,
                                         @RequestParam(defaultValue = "10") int size) {
         log.info("搜索关键词: {}, 页码: {}, 每页大小: {}", keyword, page, size);
@@ -66,7 +67,7 @@ public class SearchController {
      * GET /api/search/health
      */
     @GetMapping("/health")
-    public ResponseEntity<?> healthCheck() {
+    public ResponseEntity<String> healthCheck() {
         return ResponseEntity.ok().body("服务运行正常");
     }
 }

@@ -2,6 +2,7 @@ package com.weave.user.controller;
 
 import com.weave.user.model.dto.UpdateUserInfoDto;
 import com.weave.user.model.eunms.UserApiStatus;
+import com.weave.model.model.ApiResult;
 import com.weave.minio.service.FileService;
 import com.weave.user.service.UserInfoService;
 import com.weave.security.util.SecurityUtils;
@@ -33,8 +34,7 @@ public class AvatarController {
      * @return 头像路径
      */
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadAvatar(
-            @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<ApiResult<String>> uploadAvatar(@RequestParam("file") MultipartFile file) {
         String path = fileService.uploadAvatar(file);
         Long userId = SecurityUtils.getCurrentUserId();
         UpdateUserInfoDto updateUserInfoDto = UpdateUserInfoDto.builder()
@@ -52,7 +52,7 @@ public class AvatarController {
      * @return 预签名URL
      */
     @GetMapping("/url")
-    public ResponseEntity<?> getFileUrl(
+    public ResponseEntity<ApiResult<String>> getFileUrl(
             @RequestParam String path,
             @RequestParam(defaultValue = "3600") int expiry) {
 
@@ -63,16 +63,11 @@ public class AvatarController {
     /**
      * 获取文件预签名URL
      * @param paths 文件路径列表
-     * @param expiry 有效期（秒），默认3600秒
      * @return 预签名URL列表
      */
-    @GetMapping("/urls")
-    public ResponseEntity<?> getFileUrls(
-            @RequestParam List<String> paths,
-            @RequestParam(defaultValue = "3600") int expiry) {
-
-        Map<String, String> urls = fileService.getFileUrls(paths, expiry);
-
+    @PostMapping("/urls")
+    public ResponseEntity<ApiResult<Map<String, String>>> getFileUrls(@RequestBody List<String> paths) {
+        Map<String, String> urls = fileService.getFileUrls(paths, 3600);
         return ResponseEntity.ok(UserApiStatus.GET_SUCCESS.response(urls));
     }
 }
