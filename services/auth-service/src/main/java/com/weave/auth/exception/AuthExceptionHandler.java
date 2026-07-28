@@ -23,14 +23,9 @@ public class AuthExceptionHandler {
         return ResponseEntity.badRequest().body("具体错误：" + e.getMessage());
     }
 
-    @ExceptionHandler(CodeErrorException.class)
-    public ResponseEntity<?> handleCodeError(CodeErrorException e) {
-        return ResponseEntity.status(400).body(e.getMessage());
-    }
-
-    @ExceptionHandler(EmailExistedException.class)
-    public ResponseEntity<?> handleEmailExisted(EmailExistedException e) {
-        return ResponseEntity.status(400).body(e.getMessage());
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<?> handleCodeError(BusinessException e) {
+        return ResponseEntity.status(e.getStatus().getCode()).body(e.getStatus().getMsg());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

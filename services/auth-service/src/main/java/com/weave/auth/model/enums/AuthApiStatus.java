@@ -14,7 +14,14 @@ public enum AuthApiStatus implements ApiStatus {
     CODE_SEND_SUCCESS(200,"验证码发送成功" ),
     CODE_SEND_FAILED(400, "验证码发送失败"),
     NEW_TOKEN_SUCCESS(200, "新令牌获取成功"),
-    NEW_TOKEN_FAIL(401, "新令牌获取失败");
+    NEW_TOKEN_FAIL(401, "新令牌获取失败"),
+    EMAIL_ALREADY_REGISTERED(409, "邮箱已注册"),
+    CODE_ALREADY_SENT(400, "验证码已发送"),
+    CODE_EXPIRED(400, "验证码已过期"),
+    CODE_ERROR(400, "验证码错误"),
+    LOGOUT_FAILED(401, "登出失败"),
+    TOKEN_GENERATE_FAILED(500, "令牌生成失败"),
+    USER_NOT_FOUND(404, "用户未找到");
 
     private final int code;
     private final String msg;

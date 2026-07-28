@@ -1,12 +1,12 @@
 package com.weave.auth.service;
 
 
+import com.weave.auth.exception.BusinessException;
 import com.weave.auth.mapper.AuthMapper;
 import com.weave.auth.model.dto.*;
+import com.weave.auth.model.enums.AuthApiStatus;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import com.weave.auth.exception.CodeErrorException;
-import com.weave.auth.exception.EmailExistedException;
 import com.weave.auth.feign.UserFeignClient;
 import com.weave.auth.model.dto.CustomUserDetails;
 import com.weave.redis.constant.CacheKey;
@@ -86,7 +86,7 @@ public class AuthService {
             }
         } catch (Exception e) {
             log.error("登录失败: {}", e.getMessage(), e);
-            throw new RuntimeException("登录失败: " + e.getMessage(), e);
+            throw new BusinessException(AuthApiStatus.LOGIN_FAILED);
         }
         return apiResponseDto;
     }
@@ -95,20 +95,19 @@ public class AuthService {
         String email = apiRequestDto.email();
         // 验证邮箱是否已存在
         if (authMapper.selectUserByEmail(email) != null){
-            throw new EmailExistedException("邮箱已被注册");
+            throw new BusinessException(AuthApiStatus.EMAIL_ALREADY_REGISTERED);
         }
         // 发送验证码
         String lock = CacheKey.buildCacheKey("lock" + CacheKey.CAPTCHA, email);
         log.info("发送验证码到: {}", email);
         if (Boolean.TRUE.equals(redisUtil.hasKey(lock))){
-            throw new CodeErrorException("验证码已发送，请等待");
+            throw new BusinessException(AuthApiStatus.CODE_ALREADY_SENT);
         }
-
         try{
             // 发送验证码到验证码队列
             mqUtil.sendCaptchaCode(email);
         }catch (Exception e){
-            throw new CodeErrorException("验证码发送失败");
+            throw new BusinessException(AuthApiStatus.CODE_SEND_FAILED);
         }
     }
 
@@ -116,11 +115,11 @@ public class AuthService {
         // 1. 验证验证码
         String key = CacheKey.buildCacheKey(CacheKey.CAPTCHA, dto.email());
         if (Boolean.FALSE.equals(redisUtil.hasKey(key))){
-            throw new CodeErrorException("验证码已过期");
+            throw new BusinessException(AuthApiStatus.CODE_EXPIRED);
         }
         Integer code = redisUtil.get(key, Integer.class);
         if (!dto.code().equals(code)){
-            throw new CodeErrorException("验证码错误");
+            throw new BusinessException(AuthApiStatus.CODE_ERROR);
         }
         register(dto);
     }
@@ -133,7 +132,7 @@ public class AuthService {
                     .build();
             service.createUser(user);
         }catch (Exception e){
-            throw new RuntimeException("注册失败", e);
+            throw new BusinessException(AuthApiStatus.REGISTER_FAILED);
         }
     }
 
@@ -145,7 +144,7 @@ public class AuthService {
             SecurityContextHolder.clearContext();
             log.info("User logged out: {}", userId);
         } catch (Exception e) {
-            throw new RuntimeException("Logout failed", e);
+            throw new BusinessException(AuthApiStatus.LOGOUT_FAILED);
         }
     }
 
@@ -159,7 +158,7 @@ public class AuthService {
             // 3. 构造返回DTO
             return new TokenDto(access_token, ACCESS_TOKEN_EXPIRE_TIME,null , null);
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            throw new BusinessException(AuthApiStatus.TOKEN_GENERATE_FAILED);
         }
     }
 
@@ -173,7 +172,7 @@ public class AuthService {
             // 3. 构造返回DTO
             return new TokenDto(null,null , refresh_token, REFRESH_TOKEN_EXPIRE_TIME);
         } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+            throw new BusinessException(AuthApiStatus.TOKEN_GENERATE_FAILED);
         }
     }
 
@@ -181,7 +180,7 @@ public class AuthService {
         // 1. 从数据库重新加载用户角色和权限
         CustomUserDetails userDetails = authMapper.selectUserDetailsById(userId);
         if (userDetails == null) {
-            throw new RuntimeException("用户不存在: " + userId);
+            throw new BusinessException(AuthApiStatus.USER_NOT_FOUND);
         }
         // 2. 缓存到 Redis
         String cacheKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
