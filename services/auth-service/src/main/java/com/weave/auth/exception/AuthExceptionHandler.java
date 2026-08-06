@@ -18,14 +18,10 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 public class AuthExceptionHandler {
 
     @ExceptionHandler(HandlerMethodValidationException.class)
-    public ResponseEntity<?> handleRuntimeException(HandlerMethodValidationException e) {
+    public ResponseEntity<ApiResult<?>> handleRuntimeException(HandlerMethodValidationException e) {
         log.error("运行时异常: {}", e.getMessage(), e);
-        return ResponseEntity.badRequest().body("具体错误：" + e.getMessage());
-    }
-
-    @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<?> handleCodeError(BusinessException e) {
-        return ResponseEntity.status(e.getStatus().getCode()).body(e.getStatus().getMsg());
+        return ResponseEntity.badRequest()
+                .body(new ApiResult<>(400, "具体错误：" + e.getMessage(), null));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
