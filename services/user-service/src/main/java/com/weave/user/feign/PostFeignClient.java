@@ -2,6 +2,7 @@ package com.weave.user.feign;
 
 import com.weave.model.model.dto.PostDetailVo;
 import com.weave.model.model.ApiResult;
+import com.weave.user.feign.fallback.PostFeignClientFallbackFactory;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,11 +11,12 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 帖子服务远程调用接口
  */
-@FeignClient(name = "post-service", path = "/api/post")
+@FeignClient(name = "post-service", path = "/api/post", fallbackFactory = PostFeignClientFallbackFactory.class)
 public interface PostFeignClient {
 
     /**
@@ -31,5 +33,5 @@ public interface PostFeignClient {
      * @return 帖子列表
      */
     @PostMapping("/batch")
-    List<PostDetailVo> getPostsByIds(@RequestBody List<Long> postIds);
+    List<PostDetailVo> getPostsByIds(@RequestBody Set<Long> postIds);
 }

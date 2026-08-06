@@ -5,12 +5,12 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import com.weave.auth.feign.fallback.UserFeignClientFallback;
+import com.weave.auth.feign.fallback.UserFeignClientFallbackFactory;
 
 import com.weave.model.model.dto.AuthUserDto;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "user-service", fallback = UserFeignClientFallback.class)
+@FeignClient(name = "user-service", fallbackFactory = UserFeignClientFallbackFactory.class)
 public interface UserFeignClient {
 
     /**

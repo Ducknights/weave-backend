@@ -1,6 +1,7 @@
 package com.weave.search.feign;
 
 import com.weave.model.model.dto.PostDetailVo;
+import com.weave.search.feign.fallback.PostFeignClientFallbackFactory;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -10,7 +11,7 @@ import java.util.List;
 /**
  * 帖子服务远程调用接口
  */
-@FeignClient(name = "post-service", path = "/api/post")
+@FeignClient(name = "post-service", path = "/api/post", fallbackFactory = PostFeignClientFallbackFactory.class)
 public interface PostFeignClient {
 
     /**

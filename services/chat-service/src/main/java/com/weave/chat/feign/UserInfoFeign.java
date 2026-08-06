@@ -1,5 +1,6 @@
 package com.weave.chat.feign;
 
+import com.weave.chat.feign.fallback.UserInfoFeignFallbackFactory;
 import com.weave.model.model.dto.UserBriefDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -8,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import java.util.Map;
 import java.util.Set;
 
-@FeignClient(name = "user-service")
+@FeignClient(name = "user-service", fallbackFactory = UserInfoFeignFallbackFactory.class)
 public interface UserInfoFeign {
     /**
      * 批量获取用户信息
