@@ -1,6 +1,6 @@
 package com.weave.auth.controller;
 
-import com.weave.auth.model.dto.ApiResponseDto;
+import com.weave.auth.model.dto.LoginResDto;
 import com.weave.auth.model.dto.TokenDto;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
@@ -24,9 +24,9 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResult<ApiResponseDto>> login(@Valid @NotNull @RequestBody ApiRequestDto apiRequestDto) {
+    public ResponseEntity<ApiResult<LoginResDto>> login(@Valid @NotNull @RequestBody ApiRequestDto apiRequestDto) {
         log.info("login: {}", apiRequestDto);
-        ApiResponseDto apiResult = authService.login(apiRequestDto);
+        LoginResDto apiResult = authService.login(apiRequestDto);
         return ResponseEntity.ok()
                 .body(AuthApiStatus.LOGIN_SUCCESS.response(apiResult));
     }

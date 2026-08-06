@@ -52,8 +52,8 @@ public class AuthService {
     private static final int REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7; // 7天 = 1000 * 60 * 60 * 24 * 7 毫秒
     private static final Duration USER_AUTHORITY_CACHE_TTL = Duration.ofMinutes(130); // 缓存用户权限过期时间: 130分钟
 
-    public ApiResponseDto login(ApiRequestDto apiRequestDto) {
-        ApiResponseDto apiResponseDto = null;
+    public LoginResDto login(ApiRequestDto apiRequestDto) {
+        LoginResDto loginResDto = null;
         try {
             // 使用Spring Security进行认证
             Authentication authentication = authenticationManager.authenticate(
@@ -82,13 +82,13 @@ public class AuthService {
                 List<String> roleNames = ((CustomUserDetails) authentication.getPrincipal()).getRoles();
                 UserDto userDto = new UserDto(userId, userBriefDto.getName(), userBriefDto.getAvatar(), roleNames);
                 // 构建响应DTO
-                apiResponseDto = new ApiResponseDto(tokenDto, userDto);
+                loginResDto = new LoginResDto(tokenDto, userDto);
             }
         } catch (Exception e) {
             log.error("登录失败: {}", e.getMessage(), e);
             throw new BusinessException(AuthApiStatus.LOGIN_FAILED);
         }
-        return apiResponseDto;
+        return loginResDto;
     }
 
     public void sendCode(ApiRequestDto apiRequestDto) {

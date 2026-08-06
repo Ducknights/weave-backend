@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(name = "user-service", fallback = UserFeignClientFallback.class)
 public interface UserFeignClient {
+
     /**
      * 创建用户
      *
@@ -26,6 +27,6 @@ public interface UserFeignClient {
      * @param id 用户ID，通过路径变量传递
      * @return 返回UserDto对象，包含用户详细信息
      */
-    @GetMapping("/api/user/info/{id}")
+    @GetMapping("/api/user/{id}/info")
     UserBriefDto getUserBriefById(@PathVariable Long id);
 }

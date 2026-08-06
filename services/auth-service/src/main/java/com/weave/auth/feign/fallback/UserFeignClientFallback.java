@@ -1,6 +1,8 @@
 package com.weave.auth.feign.fallback;
 
+import com.weave.auth.exception.BusinessException;
 import com.weave.auth.feign.UserFeignClient;
+import com.weave.auth.model.enums.AuthApiStatus;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.model.model.dto.AuthUserDto;
 import com.weave.auth.model.dto.UserDto;
@@ -16,7 +18,7 @@ public class UserFeignClientFallback implements UserFeignClient {
     @Override
     public void createUser(AuthUserDto user) {
         log.error("调用user-service创建用户失败，已熔断");
-        // 可以记录到数据库或消息队列，稍后重试
+        throw new BusinessException(AuthApiStatus.REGISTER_FAILED);
     }
 
 
