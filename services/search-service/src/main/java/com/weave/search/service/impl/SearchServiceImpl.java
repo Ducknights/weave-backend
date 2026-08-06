@@ -18,7 +18,7 @@ import org.springframework.data.elasticsearch.core.SearchHits;
 import org.springframework.data.elasticsearch.core.document.Document;
 import org.springframework.data.elasticsearch.core.query.UpdateQuery;
 
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,13 +31,12 @@ import java.util.Objects;
  */
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class SearchServiceImpl implements SearchService {
 
-    @Resource
-    private SearchDocumentRepository searchDocumentRepository;
+    private final SearchDocumentRepository searchDocumentRepository;
 
-    @Resource
-    private ElasticsearchOperations elasticsearchOperations;
+    private final ElasticsearchOperations elasticsearchOperations;
 
     @Override
     public List<SearchResultDto> search(String keyword, int page, int size) {

@@ -5,7 +5,7 @@
 package com.weave.club.controller;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import com.weave.model.model.ApiResult;
 import com.weave.club.model.entity.Member;
 import com.weave.club.model.enums.ClubApiStatus;
@@ -17,10 +17,10 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/club/{clubId}/members")
+@RequiredArgsConstructor
 public class MemberController {
 
-    @Resource
-    private MemberService memberService;
+    private final MemberService memberService;
 
     /**
      * 删除成员

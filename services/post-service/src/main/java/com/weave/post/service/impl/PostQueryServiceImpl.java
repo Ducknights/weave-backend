@@ -8,7 +8,8 @@ import com.weave.post.mapper.PostMapper;
 import com.weave.post.model.enums.PostApiStatus;
 import com.weave.post.model.enums.PostStatus;
 import com.weave.post.repository.PostRepository;
-import jakarta.annotation.Resource;
+import com.weave.redis.util.RedisUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.redis.constant.CacheKey;
 import com.weave.model.model.dto.ClubBriefDto;
@@ -21,7 +22,6 @@ import com.weave.post.model.entity.Post;
 import com.weave.post.service.PostCommandService;
 import com.weave.post.service.PostQueryService;
 import com.weave.security.util.SecurityUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -29,18 +29,16 @@ import java.util.*;
 
 @Service
 @Log4j2
+@RequiredArgsConstructor
 public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implements PostQueryService {
 
-    @Resource private PostMapper postMapper;
-
-    @Resource private UserFeignClient userFeignClient;
-    @Resource private ClubFeignClient clubFeignClient;
-    @Resource private RecommendFeignClient recommendFeignClient;
-
-    @Resource private PostRepository postRepository;
-    @Resource private RedisTemplate<String, Object> redisTemplate;
-
-    @Resource private PostCommandService postCommandService;
+    private final PostMapper postMapper;
+    private final UserFeignClient userFeignClient;
+    private final ClubFeignClient clubFeignClient;
+    private final RecommendFeignClient recommendFeignClient;
+    private final PostRepository postRepository;
+    private final RedisUtil redisUtil;
+    private final PostCommandService postCommandService;
 
     /**
      * 用户点击帖子详情
@@ -155,9 +153,16 @@ public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implemen
 
         // 获取当前用户 ID
         Long currentUserId = SecurityUtils.getCurrentUserId();
+        String cacheLikeKey;
+        String cacheCollectKey;
         // 查询用户点赞和收藏的缓存信息
-        String cacheLikeKey = CacheKey.buildCacheKey(CacheKey.USER_LIKED_POSTS, currentUserId);
-        String cacheCollectKey = CacheKey.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, currentUserId);
+        if (currentUserId != null){
+            cacheLikeKey = CacheKey.buildCacheKey(CacheKey.USER_LIKED_POSTS, currentUserId);
+            cacheCollectKey = CacheKey.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, currentUserId);
+        } else {
+            cacheCollectKey = null;
+            cacheLikeKey = null;
+        }
         // 转换为 PostDetailVo
         return posts.stream()
                 .map(post -> {
@@ -198,18 +203,18 @@ public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implemen
             return false;
         }
         // 1. 先尝试直接判断成员（命中则直接返回）
-        Boolean isMember = redisTemplate.opsForSet().isMember(cacheKey, postId);
+        Boolean isMember = redisUtil.isMember(cacheKey, postId);
         if (Boolean.TRUE.equals(isMember)) {
             return true;
         }
         // 2. 检查 key 是否存在，存在说明确实不是成员
-        if (Boolean.TRUE.equals(redisTemplate.hasKey(cacheKey))) {
+        if (Boolean.TRUE.equals(redisUtil.hasKey(cacheKey))) {
             return false;
         }
         // 3. 加载缓存
         loadCache();
         // 4. 再次判断成员
-        return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(cacheKey, postId));
+        return Boolean.TRUE.equals(redisUtil.isMember(cacheKey, postId));
     }
 
     /**

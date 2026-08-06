@@ -1,13 +1,12 @@
 package org.weave.captcha.service;
 
-import jakarta.annotation.Resource;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.redis.annotation.RedisCachePut;
 import com.weave.redis.constant.CacheKey;
 import com.weave.redis.util.RedisUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -27,16 +26,12 @@ import java.util.concurrent.ThreadLocalRandom;
  */
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class EmailService {
 
-    @Autowired
-    private JavaMailSender javaMailSender;
-
-    @Autowired
-    private TemplateEngine templateEngine;
-
-    @Resource
-    private RedisUtil redisUtil;
+    private final JavaMailSender javaMailSender;
+    private final TemplateEngine templateEngine;
+    private final RedisUtil redisUtil;
 
     @Value("${app.email.from-name}")
     private String fromName;

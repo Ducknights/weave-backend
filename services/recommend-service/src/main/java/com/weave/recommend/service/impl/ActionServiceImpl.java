@@ -2,7 +2,7 @@ package com.weave.recommend.service.impl;
 
 import com.weave.recommend.mapper.UserActionMapper;
 import com.weave.recommend.service.ActionService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.recommend.model.dto.ActionDto;
 import com.weave.recommend.model.entity.UserAction;
@@ -12,10 +12,10 @@ import java.time.LocalDateTime;
 
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class ActionServiceImpl implements ActionService {
 
-    @Resource
-    private UserActionMapper userActionMapper;
+    private final UserActionMapper userActionMapper;
 
     @Override
     public void addRecord(ActionDto dto) {

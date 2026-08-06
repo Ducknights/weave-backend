@@ -8,6 +8,9 @@ import com.weave.comment.model.enums.CommentApiStatus;
 import com.weave.comment.model.vo.CommentVo;
 import com.weave.comment.repository.CommentRepository;
 import com.weave.comment.service.CommentService;
+import com.weave.redis.annotation.RedisCacheEvent;
+import com.weave.redis.constant.CacheKey;
+import com.weave.redis.util.RedisUtil;
 import lombok.extern.log4j.Log4j2;
 import com.weave.model.model.dto.UserBriefDto;
 import com.weave.comment.exception.BusinessException;
@@ -24,9 +27,12 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 评论服务实现
@@ -34,18 +40,17 @@ import java.util.*;
  */
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class CommentServiceImpl implements CommentService {
 
-    @Resource
-    private CommentRepository commentRepository;
-    @Resource
-    private CommentLikeRepository commentLikeRepository;
-    @Resource
-    private MongoTemplate mongoTemplate;
-    @Resource
-    private UserFeignClient userFeignClient;
+    private final CommentRepository commentRepository;
+    private final CommentLikeRepository commentLikeRepository;
+    private final MongoTemplate mongoTemplate;
+    private final UserFeignClient userFeignClient;
+    private final RedisUtil redisUtil;
 
     @Override
+    @RedisCacheEvent(value = CacheKey.POST_COMMENTS_NEW, key = "#command.postId")
     public void addComment(CommentCommand command) {
         // 获取当前用户ID
         Long userId = SecurityUtils.getCurrentUserId();
@@ -116,7 +121,13 @@ public class CommentServiceImpl implements CommentService {
                 .and("status").is(Comment.STATUS_VISIBLE)
                 .and("parentId").in(null, "")); // 根评论
 
-        // 添加过滤条件（likeCount < cursorLikeCount, _id < cursorId）
+        // 过滤屏蔽和拉黑的用户评论
+        Set<Long> filteredUserIds = getFilteredUserIds();
+        if (!filteredUserIds.isEmpty()) {
+            query.addCriteria(Criteria.where("userId").nin(filteredUserIds));
+        }
+
+        // 添加游标过滤条件（likeCount < cursorLikeCount, _id < cursorId）
         if (cursorLikeCount != null && cursorId != null) {
             Criteria cursorCriteria = new Criteria().orOperator(
                     Criteria.where("likeCount").lt(cursorLikeCount),
@@ -177,6 +188,7 @@ public class CommentServiceImpl implements CommentService {
                 .hasMore(replyPage.hasNext())
                 .build();
     }
+
     /**
      * 点赞评论
      *
@@ -206,13 +218,13 @@ public class CommentServiceImpl implements CommentService {
         comment.setLikeCount(comment.getLikeCount() + 1);
         commentRepository.save(comment);
     }
+
     /**
      * 取消点赞评论
      *
      * @param commentId 评论ID
      * @param userId 用户ID
      */
-
     @Override
     public void unlikeComment(String commentId, Long userId) {
         // 验证评论存在
@@ -277,6 +289,32 @@ public class CommentServiceImpl implements CommentService {
         return commentRepository.findById(new ObjectId(commentId))
                 .filter(c -> c.getStatus() != Comment.STATUS_DELETED)
                 .orElseThrow(() -> new BusinessException(CommentApiStatus.COMMENT_NOT_FOUND));
+    }
+
+    /**
+     * 获取需过滤的屏蔽+拉黑用户ID集合 —— Redis缓存优先，未命中则 Feign 兜底并缓存 5 分钟
+     */
+    private Set<Long> getFilteredUserIds() {
+        Long currentUserId = SecurityUtils.getCurrentUserId();
+        String blockedKey = CacheKey.buildCacheKey(CacheKey.USER_BLOCKED_USERS, currentUserId);
+        String mutedKey = CacheKey.buildCacheKey(CacheKey.USER_MUTED_USERS, currentUserId);
+
+        // 先查 Redis
+        Set<String> blockedCached = redisUtil.getSetMembers(blockedKey);
+        Set<String> mutedCached = redisUtil.getSetMembers(mutedKey);
+        if (!blockedCached.isEmpty() && !mutedCached.isEmpty()) {
+            return Stream
+                    .concat(blockedCached.stream().map(Long::valueOf),
+                            mutedCached.stream().map(Long::valueOf))
+                    .collect(Collectors.toSet());
+        } else {
+            // 未命中，调 Feign 并缓存
+            Set<Long> ids = userFeignClient.getMutedAndBlockedTargetIds();
+            if (!ids.isEmpty()) {
+                redisUtil.addListToSet(blockedKey, ids, Duration.ofMinutes(5));
+            }
+            return ids;
+        }
     }
 
     /**

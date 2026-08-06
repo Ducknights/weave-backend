@@ -1,17 +1,17 @@
 package com.weave.recommend.task;
 
 import com.weave.recommend.service.RecommendService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class SimilarityComputeTask {
 
-    @Resource
-    private RecommendService recommendService;
+    private final RecommendService recommendService;
 
     @Scheduled(cron = "0 0 2 * * ?")
     public void computeSimilarity() {

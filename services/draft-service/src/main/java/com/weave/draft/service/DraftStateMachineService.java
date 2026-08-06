@@ -3,7 +3,7 @@ package com.weave.draft.service;
 import com.weave.draft.model.entity.Draft;
 import com.weave.draft.model.enums.DraftStateEvent;
 import com.weave.draft.model.enums.DraftStatus;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -21,10 +21,10 @@ import reactor.core.publisher.Mono;
  */
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class DraftStateMachineService {
 
-    @Resource
-    private StateMachineFactory<DraftStatus, DraftStateEvent> stateMachineFactory;
+    private final StateMachineFactory<DraftStatus, DraftStateEvent> stateMachineFactory;
 
     private static final String DRAFT_ID_HEADER = "draftId";
 

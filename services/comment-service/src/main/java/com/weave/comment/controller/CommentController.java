@@ -5,7 +5,7 @@ import com.weave.comment.model.dto.CommentVosDto;
 import com.weave.comment.model.enums.CommentApiStatus;
 import com.weave.comment.service.CommentService;
 import com.weave.model.model.ApiResult;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.security.util.SecurityUtils;
 import org.springframework.http.ResponseEntity;
@@ -19,10 +19,10 @@ import org.springframework.web.bind.annotation.*;
 @Log4j2
 @RestController
 @RequestMapping("/api/comment")
+@RequiredArgsConstructor
 public class CommentController {
 
-    @Resource
-    private CommentService commentService;
+    private final CommentService commentService;
 
     /**
      * 添加评论

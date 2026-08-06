@@ -1,7 +1,7 @@
 package com.weave.auth.service;
 
 import com.weave.auth.mapper.AuthMapper;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import com.weave.model.model.dto.AuthUserDto;
 import com.weave.auth.model.dto.CustomUserDetails;
 import com.weave.auth.model.dto.UserAuthDto;
@@ -14,12 +14,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class SecurityUserDetailsService implements UserDetailsManager {
 
-    @Resource
-    private AuthMapper authMapper;
-    @Resource
-    private UserFeignClient userFeignClient;
+    private final AuthMapper authMapper;
+    private final UserFeignClient userFeignClient;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

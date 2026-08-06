@@ -2,7 +2,7 @@ package com.weave.user.controller;
 
 import com.weave.user.model.vo.UserInfoVo;
 import com.weave.user.service.UserInfoService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.model.model.dto.AuthUserDto;
 import com.weave.model.model.dto.UserBriefDto;
@@ -20,10 +20,10 @@ import java.util.Set;
 @Log4j2
 @RestController
 @RequestMapping("/api/user")
+@RequiredArgsConstructor
 public class UserInfoController {
 
-    @Resource
-    private UserInfoService userInfoService;
+    private final UserInfoService userInfoService;
 
     /**
      * 处理用户注册请求的接口方法

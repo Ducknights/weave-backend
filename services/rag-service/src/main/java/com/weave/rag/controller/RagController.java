@@ -2,7 +2,7 @@ package com.weave.rag.controller;
 
 import com.weave.rag.client.RagGrpcClient;
 import io.grpc.StatusRuntimeException;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +17,10 @@ import java.util.concurrent.Executors;
 @Log4j2
 @RestController
 @RequestMapping("/api/rag")
+@RequiredArgsConstructor
 public class RagController {
 
-    @Resource
-    private RagGrpcClient ragGrpcClient;
+    private final RagGrpcClient ragGrpcClient;
 
     private final ExecutorService streamExecutor = Executors.newCachedThreadPool();
 

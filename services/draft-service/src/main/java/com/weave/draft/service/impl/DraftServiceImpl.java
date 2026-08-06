@@ -15,7 +15,7 @@ import com.weave.draft.service.DraftService;
 import com.weave.draft.service.DraftStateMachineService;
 import com.weave.model.model.dto.DraftPublishMessageDto;
 import com.weave.rabbitmq.util.MQUtil;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,19 +27,20 @@ import java.util.stream.Collectors;
 @Log4j2
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements DraftService {
 
-    @Resource
-    private DraftMapper draftMapper;
-    @Resource
-    private DraftResourceMapper draftResourceMapper;
-    @Resource
-    private DraftStateMachineService stateMachineService;
-    @Resource
-    private MQUtil mqUtil;
+    private final DraftMapper draftMapper;
+    private final DraftResourceMapper draftResourceMapper;
+    private final DraftStateMachineService stateMachineService;
+    private final MQUtil mqUtil;
 
     @Override
     public Long saveDraft(Long userId, DraftDto draftDto) {
+        // 限制：每个用户只能拥有一条活跃（未归档）草稿
+        if (draftMapper.countActiveByUserId(userId) >= 1) {
+            throw new BusinessException(DraftApiStatus.DRAFT_ALREADY_EXISTS);
+        }
         Draft draft = Draft.builder()
                 .userId(userId)
                 .clubId(draftDto.getClubId())
@@ -52,6 +53,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         return draft.getDraftId();
     }
 
+    /**
+     * 更新草稿
+     */
     @Override
     public void updateDraft(Long draftId, Long userId, DraftDto draftDto) {
         Draft draft = requireOwnedDraft(draftId, userId);
@@ -72,6 +76,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         replaceResources(draftId, draftDto.getCoverImage());
     }
 
+    /**
+     * 删除草稿
+     */
     @Override
     public void deleteDraft(Long draftId, Long userId) {
         Draft draft = requireOwnedDraft(draftId, userId);
@@ -80,6 +87,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
                 .forEach(r -> draftResourceMapper.deleteById(r.getId()));
     }
 
+    /**
+     * 提交草稿审核
+     */
     @Override
     public void submitForReview(Long draftId, Long userId) {
         Draft draft = requireOwnedDraft(draftId, userId);
@@ -88,6 +98,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         draftMapper.updateById(draft);
     }
 
+    /**
+     * 审核通过
+     */
     @Override
     public void approve(Long draftId, Long reviewerId, String remark) {
         Draft draft = requireDraft(draftId);
@@ -100,6 +113,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         sendPublishMessage(draft);
     }
 
+    /**
+     * 审核拒绝
+     */
     @Override
     public void reject(Long draftId, Long reviewerId, String remark) {
         Draft draft = requireDraft(draftId);
@@ -110,29 +126,46 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         draftMapper.updateById(draft);
     }
 
+    /**
+     * 处理发布结果
+     */
     @Override
-    public DraftVo getDraftDetail(Long draftId, Long userId) {
-        Draft draft = requireOwnedDraft(draftId, userId);
-        return toVo(draft, loadResources(draftId));
+    public void handlePublishResult(Long draftId, Long postId) {
+        Draft draft = draftMapper.selectById(draftId);
+        if (draft == null) {
+            log.warn("收到发布回执但草稿不存在: draftId={}", draftId);
+            return;
+        }
+        // 已归档则忽略
+        if (draft.getStatus() == DraftStatus.ARCHIVED) {
+            return;
+        }
+        draft.setPublishedPostId(postId);
+        draft.setStatus(DraftStatus.ARCHIVED);
+        draftMapper.updateById(draft);
+        log.info("草稿发布成功已归档: draftId={}, postId={}", draftId, postId);
     }
 
+    /**
+     * 获取草稿详情
+     */
     @Override
-    public List<DraftVo> getMyDrafts(Long userId) {
-        return toVoList(draftMapper.selectByUserId(userId));
+    public DraftVo getDraftDetail(Long userId) {
+        Draft draft = draftMapper.selectByUserId(userId);
+        return toVo(draft, loadResources(draft.getDraftId()));
     }
 
-    @Override
-    public List<DraftVo> getMyPendingDrafts(Long userId) {
-        return toVoList(draftMapper.selectByUserIdAndStatus(userId, DraftStatus.PENDING));
-    }
-
+    /**
+     * 获取所有待审核草稿列表
+     */
     @Override
     public List<DraftVo> getAllPendingDrafts() {
         return toVoList(draftMapper.selectByStatus(DraftStatus.PENDING));
     }
 
-    // ============ 私有辅助方法 ============
-
+    /**
+     * 根据ID获取草稿，如果不存在则抛出异常
+     */
     private Draft requireDraft(Long draftId) {
         Draft draft = draftMapper.selectById(draftId);
         if (draft == null) {
@@ -141,6 +174,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         return draft;
     }
 
+    /**
+     * 根据ID获取草稿，如果不存在则抛出异常
+     */
     private Draft requireOwnedDraft(Long draftId, Long userId) {
         Draft draft = requireDraft(draftId);
         if (!draft.getUserId().equals(userId)) {
@@ -149,6 +185,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         return draft;
     }
 
+    /**
+     * 保存草稿资源
+     */
     private void saveResources(Long draftId, List<String> resources) {
         if (CollectionUtils.isEmpty(resources)) {
             return;
@@ -162,18 +201,27 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         }
     }
 
+    /**
+     * 替换草稿资源
+     */
     private void replaceResources(Long draftId, List<String> resources) {
         draftResourceMapper.selectByDraftId(draftId)
                 .forEach(r -> draftResourceMapper.deleteById(r.getId()));
         saveResources(draftId, resources);
     }
 
+    /**
+     * 加载草稿资源
+     */
     private List<String> loadResources(Long draftId) {
         return draftResourceMapper.selectByDraftId(draftId).stream()
                 .map(DraftResource::getResourcePath)
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 发送草稿发布消息
+     */
     private void sendPublishMessage(Draft draft) {
         DraftPublishMessageDto message = DraftPublishMessageDto.builder()
                 .draftId(draft.getDraftId())
@@ -187,6 +235,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
         mqUtil.sendDraftPublish(message);
     }
 
+    /**
+     * 转换为草稿列表VO
+     */
     private List<DraftVo> toVoList(List<Draft> drafts) {
         if (CollectionUtils.isEmpty(drafts)) {
             return List.of();
@@ -200,7 +251,9 @@ public class DraftServiceImpl extends ServiceImpl<DraftMapper, Draft> implements
                 .map(draft -> toVo(draft, resourceMap.getOrDefault(draft.getDraftId(), List.of())))
                 .toList();
     }
-
+    /**
+     * 转换为草稿VO
+     */
     private DraftVo toVo(Draft draft, List<String> resources) {
         return DraftVo.builder()
                 .draftId(draft.getDraftId())

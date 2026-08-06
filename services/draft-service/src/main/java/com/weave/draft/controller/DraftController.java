@@ -7,7 +7,7 @@ import com.weave.draft.model.enums.DraftApiStatus;
 import com.weave.draft.model.vo.DraftVo;
 import com.weave.draft.service.DraftService;
 import com.weave.security.util.SecurityUtils;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -21,10 +21,10 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequestMapping("/api/draft")
+@RequiredArgsConstructor
 public class DraftController {
 
-    @Resource
-    private DraftService draftService;
+    private final DraftService draftService;
 
     /**
      * 保存草稿

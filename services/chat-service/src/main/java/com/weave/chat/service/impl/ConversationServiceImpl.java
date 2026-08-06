@@ -9,13 +9,13 @@ import com.weave.chat.model.dto.ConversationMemberParam;
 import com.weave.chat.model.entity.Conversation;
 import com.weave.chat.model.entity.ConversationMember;
 import com.weave.chat.model.vo.ConversationVo;
-import com.weave.chat.service.ConversationMemberService;
 import com.weave.chat.service.ConversationService;
-import jakarta.annotation.Resource;
+import com.weave.redis.annotation.RedisCacheEvent;
+import com.weave.redis.annotation.RedisCacheable;
+import lombok.RequiredArgsConstructor;
 import com.weave.redis.constant.CacheKey;
 import com.weave.model.model.dto.UserBriefDto;
 import com.weave.redis.util.RedisUtil;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,20 +26,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ConversationServiceImpl implements ConversationService {
 
-    @Resource
-    private ConversationMapper conversationMapper;
-    @Resource
-    private ConversationMemberMapper conversationMemberMapper;
-    @Resource
-    private ConversationMemberService conversationMemberService;
-    @Resource
-    private UserInfoFeign userInfoFeign;
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-    @Resource
-    private RedisUtil redisUtil;
+    private final ConversationMapper conversationMapper;
+    private final ConversationMemberMapper conversationMemberMapper;
+    private final UserInfoFeign userInfoFeign;
+    private final RedisUtil redisUtil;
 
     /**
      * 获取或创建私聊会话
@@ -74,7 +67,8 @@ public class ConversationServiceImpl implements ConversationService {
      * @param content 内容
      */
     @Override
-    public void updateConversation(Long conversationId, String content) {
+    @RedisCacheEvent(value = CachePrefix.CONVERSATION, key = "#userId")
+    public void updateConversation(Long userId, Long conversationId, String content) {
         conversationMapper.updateConversation(conversationId, content);
     }
 
@@ -84,13 +78,18 @@ public class ConversationServiceImpl implements ConversationService {
     @Override
     public List<ConversationVo> getConversations(Long userId) {
         // 查找用户会话
-        List<Conversation> conversations = conversationMapper.findByUserId(userId);
+        List<Conversation> conversations = findConversationsByUserId(userId);
         if (conversations == null || conversations.isEmpty()) {
             return Collections.emptyList();
         }
         List<ConversationVo> conversationVos = convertToConversationVo(userId, conversations);
         CacheConversationVo(conversationVos);
         return conversationVos;
+    }
+
+    @RedisCacheable(value = CachePrefix.CONVERSATION, key = "#userId")
+    private List<Conversation> findConversationsByUserId(Long userId) {
+        return conversationMapper.findByUserId(userId);
     }
 
     /**

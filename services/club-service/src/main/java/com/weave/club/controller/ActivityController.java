@@ -2,7 +2,7 @@ package com.weave.club.controller;
 
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.model.model.ApiResult;
 import com.weave.club.model.entity.Activity;
@@ -20,10 +20,10 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/club/activities")
+@RequiredArgsConstructor
 public class ActivityController {
 
-    @Resource
-    private ActivityService activityService;
+    private final ActivityService activityService;
 
     /**
      * 创建活动

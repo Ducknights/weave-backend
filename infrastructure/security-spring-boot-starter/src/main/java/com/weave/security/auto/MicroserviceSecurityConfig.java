@@ -1,5 +1,6 @@
 package com.weave.security.auto;
 
+import com.weave.redis.util.RedisUtil;
 import com.weave.security.filter.HeaderFilter;
 import com.weave.security.provider.HeaderAuthenticationProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -24,8 +25,8 @@ public class MicroserviceSecurityConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public HeaderFilter HeaderFilter() {
-        return new HeaderFilter();
+    public HeaderFilter headerFilter(RedisUtil redisUtil) {
+        return new HeaderFilter(redisUtil);
     }
 
     @Bean

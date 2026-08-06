@@ -2,9 +2,9 @@ package com.weave.auth.controller;
 
 import com.weave.auth.model.dto.LoginResDto;
 import com.weave.auth.model.dto.TokenDto;
-import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.auth.model.dto.ApiRequestDto;
 import com.weave.model.model.ApiResult;
@@ -17,11 +17,11 @@ import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    @Resource
-    private AuthService authService;
+    private final AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResult<LoginResDto>> login(@Valid @NotNull @RequestBody ApiRequestDto apiRequestDto) {

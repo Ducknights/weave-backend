@@ -9,7 +9,7 @@ import com.corundumstudio.socketio.annotation.OnEvent;
 import com.weave.redis.util.RedisUtil;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.rabbitmq.constant.MQueue;
 import com.weave.chat.model.dto.ConversationMemberParam;
@@ -36,26 +36,19 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 @Log4j2
 @Component
+@RequiredArgsConstructor
 public class SocketIOEventHandler {
 
-    @Resource
-    private ThreadPoolTaskScheduler taskScheduler;
-    @Resource
-    private SocketIOServer socketIOServer;
-    @Resource
-    private MessageService messageService;
-    @Resource
-    private ConversationMemberService conversationMemberService;
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-    @Resource
-    private RedisUtil redisUtil;
-    @Resource
-    private MQUtil mqUtil;
+    private final ThreadPoolTaskScheduler taskScheduler;
+    private final SocketIOServer socketIOServer;
+    private final MessageService messageService;
+    private final ConversationMemberService conversationMemberService;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisUtil redisUtil;
+    private final MQUtil mqUtil;
     // 用户ID -> SocketIOClient 映射
     private final Map<Long, SocketIOClient> onlineClients = new ConcurrentHashMap<>();
 

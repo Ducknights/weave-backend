@@ -1,6 +1,6 @@
 package com.weave.post.controller;
 
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import com.weave.post.model.enums.PostApiStatus;
 import com.weave.model.model.ApiResult;
 import com.weave.post.service.PostCommandService;
@@ -10,10 +10,10 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/post")
+@RequiredArgsConstructor
 public class ActionController {
 
-    @Resource
-    private PostCommandService postCommandService;
+    private final PostCommandService postCommandService;
 
     /**
      * 点赞帖子

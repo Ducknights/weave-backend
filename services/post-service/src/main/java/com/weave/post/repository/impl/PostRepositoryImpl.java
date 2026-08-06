@@ -2,7 +2,7 @@ package com.weave.post.repository.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.redis.constant.CacheKey;
 import com.weave.rabbitmq.constant.MQueue;
@@ -23,18 +23,14 @@ import java.util.stream.Collectors;
 
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class PostRepositoryImpl implements PostRepository {
 
-    @Resource
-    private RedisUtil redisUtil;
-    @Resource
-    private PostMapper postMapper;
-    @Resource
-    private PostResourceMapper postResourceMapper;
-    @Resource
-    private ObjectMapper objectMapper;
-    @Resource
-    private MQUtil mqUtil;
+    private final RedisUtil redisUtil;
+    private final PostMapper postMapper;
+    private final PostResourceMapper postResourceMapper;
+    private final ObjectMapper objectMapper;
+    private final MQUtil mqUtil;
 
     @Override
     public List<Post> getPostsFromCacheOrDb(List<Long> ids) {
@@ -137,8 +133,8 @@ public class PostRepositoryImpl implements PostRepository {
             Map<String, Object> postMap = objectMapper.convertValue(post, new TypeReference<>() {});
             // resources 从 List 转为逗号分隔 String，适配 Redis Hash 只支持标量
             List<String> resources = post.getResources();
-            postMap.put("resources", resources != null && !resources.isEmpty()
-                    ? String.join(",", resources) : "");
+            postMap.put("resources", resources != null && !resources.isEmpty() ? String.join(",", resources) : "");
+            log.info("缓存帖子：{}", post);
             redisUtil.setForHash(cacheHashKey, postMap, CacheSpec.PostHash.TTL);
         }
     }

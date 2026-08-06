@@ -5,7 +5,7 @@ import com.weave.auth.exception.BusinessException;
 import com.weave.auth.mapper.AuthMapper;
 import com.weave.auth.model.dto.*;
 import com.weave.auth.model.enums.AuthApiStatus;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.auth.feign.UserFeignClient;
 import com.weave.auth.model.dto.CustomUserDetails;
@@ -32,21 +32,15 @@ import java.util.List;
 @Slf4j
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class AuthService {
-    @Resource
-    private AuthenticationManager authenticationManager;
-    @Resource
-    private SecurityUserDetailsService service;
-    @Resource
-    private PasswordEncoder passwordEncoder;
-    @Resource
-    private AuthMapper authMapper;
-    @Resource
-    private UserFeignClient userFeignClient;
-    @Resource
-    private MQUtil mqUtil;
-    @Resource
-    private RedisUtil redisUtil;
+    private final AuthenticationManager authenticationManager;
+    private final SecurityUserDetailsService service;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthMapper authMapper;
+    private final UserFeignClient userFeignClient;
+    private final MQUtil mqUtil;
+    private final RedisUtil redisUtil;
 
     private static final int ACCESS_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 2; // 2小时 = 1000 * 60 * 60 * 2 毫秒
     private static final int REFRESH_TOKEN_EXPIRE_TIME = 1000 * 60 * 60 * 24 * 7; // 7天 = 1000 * 60 * 60 * 24 * 7 毫秒
@@ -62,6 +56,7 @@ public class AuthService {
                             apiRequestDto.password()
                     )
             );
+            // 生成JWT令牌
             if (authentication.isAuthenticated()) {
                 // 设置认证上下文
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -85,7 +80,7 @@ public class AuthService {
                 loginResDto = new LoginResDto(tokenDto, userDto);
             }
         } catch (Exception e) {
-            log.error("登录失败: {}", e.getMessage(), e);
+            log.error("登录失败: {}", e.getMessage());
             throw new BusinessException(AuthApiStatus.LOGIN_FAILED);
         }
         return loginResDto;

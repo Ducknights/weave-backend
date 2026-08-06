@@ -2,7 +2,7 @@ package com.weave.club.service.imp;
 
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import com.weave.model.model.dto.ClubBriefDto;
 import com.weave.club.model.entity.Club;
 import com.weave.club.model.entity.Member;
@@ -20,12 +20,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ClubServiceImp extends ServiceImpl<ClubMapper, Club> implements ClubService {
 
-    @Resource
-    private ClubMapper clubMapper;
-    @Resource
-    private MemberService memberService;
+    private final ClubMapper clubMapper;
+    private final MemberService memberService;
 
     @Override
     public Club createClub(Club club) {

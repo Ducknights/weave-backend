@@ -1,18 +1,18 @@
 package com.weave.club.service.imp;
 
-import jakarta.annotation.Resource;
 import com.weave.club.model.entity.Member;
 import com.weave.club.mapper.MemberMapper;
 import com.weave.club.service.MemberService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class MemberServiceImp implements MemberService {
 
-    @Resource
-    private MemberMapper memberMapper;
+    private final MemberMapper memberMapper;
 
     @Override
     public void createMember(Member member) {

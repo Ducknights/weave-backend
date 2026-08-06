@@ -1,6 +1,6 @@
 package com.weave.recommend.controller;
 
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.recommend.service.RecommendService;
 import org.springframework.http.ResponseEntity;
@@ -11,10 +11,10 @@ import java.util.List;
 @Slf4j
 @RestController
 @RequestMapping("/api/recommend")
+@RequiredArgsConstructor
 public class RecommendController {
 
-    @Resource
-    private RecommendService recommendService;
+    private final RecommendService recommendService;
 
     @GetMapping("/post")
     public List<Long> getRecommendations(@RequestParam(required = false) Long userId, @RequestParam int limit) {

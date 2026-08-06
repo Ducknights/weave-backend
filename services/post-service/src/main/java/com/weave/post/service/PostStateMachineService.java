@@ -1,7 +1,7 @@
 package com.weave.post.service;
 
 import com.weave.post.model.enums.PostStatus;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.post.model.entity.Post;
 import com.weave.post.model.enums.PostStateEvent;
@@ -23,10 +23,10 @@ import reactor.core.publisher.Mono;
  */
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class PostStateMachineService {
 
-    @Resource
-    private StateMachineFactory<PostStatus, PostStateEvent> stateMachineFactory;
+    private final StateMachineFactory<PostStatus, PostStateEvent> stateMachineFactory;
 
     private static final String POST_ID_HEADER = "postId";
 

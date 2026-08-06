@@ -1,11 +1,13 @@
 package com.weave.recommend.service.impl;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.weave.recommend.mapper.UserActionMapper;
 import com.weave.recommend.model.dto.PostCoOccurrenceDto;
 import com.weave.recommend.model.dto.PostTotalWeightDto;
 import com.weave.recommend.model.dto.PostWeightDto;
 import com.weave.recommend.service.RecommendService;
-import jakarta.annotation.Resource;
+import com.weave.redis.util.RedisUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.redis.constant.CacheKey;
 import com.weave.recommend.model.dto.SimilarPostDto;
@@ -24,13 +26,14 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class RecommendServiceImpl implements RecommendService {
 
-    @Resource
-    private UserActionMapper userActionMapper;
+    private final UserActionMapper userActionMapper;
 
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private final RedisUtil redisUtil;
 
     /** Redis中存储帖子相似度的key前缀 */
     private static final String SIMILAR_POST_KEY = "similar:post";
@@ -165,11 +168,9 @@ public class RecommendServiceImpl implements RecommendService {
      */
     private List<SimilarPostDto> getSimilarPostsFromRedis(Long postId) {
         String key = CacheKey.buildCacheKey(SIMILAR_POST_KEY, postId);
-        Object data = redisTemplate.opsForValue().get(key);
-        if (data instanceof List) {
-            @SuppressWarnings("unchecked")
-            List<SimilarPostDto> result = (List<SimilarPostDto>) data;
-            return result;
+        List<SimilarPostDto> data = redisUtil.get(key, new TypeReference<>() {});
+        if (data != null) {
+            return data;
         }
         return Collections.emptyList();
     }
@@ -179,7 +180,7 @@ public class RecommendServiceImpl implements RecommendService {
      */
     private void saveSimilarPostsToRedis(Long postId, List<SimilarPostDto> similarPosts) {
         String key = CacheKey.buildCacheKey(SIMILAR_POST_KEY, postId);
-        redisTemplate.opsForValue().set(key, similarPosts);
+        redisUtil.set(key, similarPosts);
     }
 
     /**

@@ -1,6 +1,6 @@
 package com.weave.post.controller;
 
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.post.model.dto.PostDto;
 import com.weave.post.model.enums.PostApiStatus;
@@ -17,12 +17,11 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequestMapping("/api/post")
+@RequiredArgsConstructor
 public class PostController {
 
-    @Resource
-    private PostCommandService postCommandService;
-    @Resource
-    private PostQueryService postQueryService;
+    private final PostCommandService postCommandService;
+    private final PostQueryService postQueryService;
 
     /**
      * 获取推荐帖子的请求处理方法

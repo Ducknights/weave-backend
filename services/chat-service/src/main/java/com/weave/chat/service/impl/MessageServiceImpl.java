@@ -2,7 +2,7 @@ package com.weave.chat.service.impl;
 
 import com.weave.chat.model.dto.ConversationMemberParam;
 import com.weave.chat.service.ConversationMemberService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import com.weave.chat.mapper.MessageMapper;
 import com.weave.chat.model.entity.Message;
 import com.weave.chat.model.enums.MessageType;
@@ -16,14 +16,12 @@ import java.util.List;
 
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class MessageServiceImpl implements MessageService {
 
-    @Resource
-    private ConversationService conversationService;
-    @Resource
-    private ConversationMemberService conversationMemberService;
-    @Resource
-    private MessageMapper messageMapper;
+    private final ConversationService conversationService;
+    private final ConversationMemberService conversationMemberService;
+    private final MessageMapper messageMapper;
 
     @Override
     public Message saveMessage(Long fromId, Long toId, String content) {
@@ -42,7 +40,7 @@ public class MessageServiceImpl implements MessageService {
         messageMapper.insert(message);
 
         // 更新会话内容
-        conversationService.updateConversation(conversationId, message.getContent());
+        conversationService.updateConversation(fromId, conversationId, message.getContent());
 
         // 更新发送者已读消息ID
         conversationMemberService.updateUserLastReadMessageId(

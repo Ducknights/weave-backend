@@ -5,7 +5,6 @@
 package com.weave.club.controller;
 
 import jakarta.annotation.Nonnull;
-import jakarta.annotation.Resource;
 import com.weave.model.model.ApiResult;
 import com.weave.model.model.dto.ClubBriefDto;
 import com.weave.club.model.entity.Club;
@@ -13,6 +12,7 @@ import com.weave.club.model.vo.ClubCardVo;
 import com.weave.club.model.enums.ClubApiStatus;
 import com.weave.club.service.ClubService;
 import com.weave.security.util.SecurityUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,10 +21,10 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/club")
+@RequiredArgsConstructor
 public class ClubController {
 
-    @Resource
-    private ClubService clubService;
+    private final ClubService clubService;
 
     /**
      * 创建俱乐部

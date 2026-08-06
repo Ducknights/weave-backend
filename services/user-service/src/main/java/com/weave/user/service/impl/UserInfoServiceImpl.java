@@ -1,7 +1,8 @@
 package com.weave.user.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import jakarta.annotation.Resource;
+import com.weave.redis.util.RedisUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.redis.annotation.RedisCacheable;
 import com.weave.redis.constant.CacheKey;
@@ -16,23 +17,21 @@ import com.weave.user.model.entity.UserInfo;
 import com.weave.user.model.vo.UserInfoVo;
 import com.weave.user.service.UserInfoService;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.*;
 
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> implements UserInfoService {
 
-    @Resource
-    private UserInfoMapper userInfoMapper;
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-    @Resource
-    private PostFeignClient postFeignClient;
+    private final UserInfoMapper userInfoMapper;
+    private final RedisUtil redisUtil;
+    private final PostFeignClient postFeignClient;
 
     /**
      * 根据用户ID集合批量获取用户信息
@@ -52,7 +51,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
         ids.forEach(id -> {
             // 尝试从redis中获取用户信息
             String key = CacheKey.buildCacheKey(CacheKey.USER_BRIEF_INFO, id);
-            UserBriefDto cachedUser = (UserBriefDto) redisTemplate.opsForValue().get(key);
+            UserBriefDto cachedUser = redisUtil.get(key, UserBriefDto.class);
             // 缓存命中，直接使用缓存中的数据
             if (cachedUser != null) {
                 result.put(id, cachedUser);
@@ -75,7 +74,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
                     // 创建用户简要信息对象并缓存
                     UserBriefDto userBriefDto = new UserBriefDto(user.getId(), user.getName(), user.getAvatar());
                     String key = CacheKey.buildCacheKey(CacheKey.USER_BRIEF_INFO, user.getId());
-                    redisTemplate.opsForValue().set(key, userBriefDto);
+                    redisUtil.set(key, userBriefDto, Duration.ofMinutes(120));
                     // 将用户信息添加到结果集中
                     result.put(user.getId(), userBriefDto);
                     notFoundIds.remove(user.getId());
@@ -86,7 +85,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
             for (Long id : notFoundIds) {
                 UserBriefDto emptyUser = UserBriefDto.buildEmpty(id);
                 String key = CacheKey.buildCacheKey(CacheKey.USER_BRIEF_INFO, id);
-                redisTemplate.opsForValue().set(key, emptyUser);
+                redisUtil.set(key, emptyUser, Duration.ofMinutes(120));
                 result.put(id, emptyUser);
             }
         }
@@ -118,15 +117,7 @@ public class UserInfoServiceImpl extends ServiceImpl<UserInfoMapper, UserInfo> i
     @Override
     @RedisCacheable(value = CacheKey.USER_BRIEF_INFO, key = "#id")
     public UserBriefDto getUserBriefDtoById(Long id) {
-        UserInfo userInfo = userInfoMapper.selectById(id);
-        if (userInfo == null){
-            return UserBriefDto.buildEmpty(id);
-        }
-        return new UserBriefDto(
-                userInfo.getId(),
-                userInfo.getName(),
-                userInfo.getAvatar()
-        );
+        return userInfoMapper.selectUserBriefDtoById(id);
     }
 
     @Override

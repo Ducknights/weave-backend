@@ -9,7 +9,7 @@ import com.weave.post.model.enums.PostStatus;
 import com.weave.post.service.PostStateMachineService;
 import com.weave.redis.annotation.RedisCacheEvent;
 import com.weave.redis.util.RedisUtil;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.redis.constant.CacheKey;
 import com.weave.model.constant.PostOperation;
@@ -17,6 +17,7 @@ import com.weave.model.model.dto.SearchDocumentDto;
 import com.weave.model.model.dto.PostActionMessageDto;
 import com.weave.model.model.dto.PostSyncMessageDto;
 import com.weave.model.model.dto.DraftPublishMessageDto;
+import com.weave.model.model.dto.DraftPublishResultDto;
 import com.weave.post.model.dto.PostDto;
 import com.weave.post.model.entity.Post;
 import com.weave.post.model.entity.PostResource;
@@ -31,20 +32,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Log4j2
 @Service
 @Transactional
+@RequiredArgsConstructor
 public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implements PostCommandService {
 
-    @Resource
-    private PostMapper postMapper;
-    @Resource
-    private PostResourceMapper postResourceMapper;
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-    @Resource
-    private RedisUtil redisUtil;
-    @Resource
-    private MQUtil mqUtil;
-    @Resource
-    private PostStateMachineService stateMachineService;
+    private final PostMapper postMapper;
+    private final PostResourceMapper postResourceMapper;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisUtil redisUtil;
+    private final MQUtil mqUtil;
+    private final PostStateMachineService stateMachineService;
 
     /**
      * 消费草稿审核通过消息，创建已发布帖子（初始状态: PUBLISHED）
@@ -77,6 +73,13 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         }
         // 发布后同步到搜索引擎
         sendPostSyncMessage(PostOperation.PUBLISH, post);
+        // 回执给 draft-service，确认发布成功并回写 publishedPostId
+        DraftPublishResultDto result = DraftPublishResultDto.builder()
+                .draftId(message.getDraftId())
+                .postId(postId)
+                .success(true)
+                .build();
+        mqUtil.sendDraftPublishResult(result);
     }
 
     /**

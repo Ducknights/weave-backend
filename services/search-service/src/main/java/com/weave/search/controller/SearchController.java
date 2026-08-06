@@ -2,7 +2,7 @@ package com.weave.search.controller;
 
 import com.weave.search.service.ConversionService;
 import com.weave.search.service.SearchService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.model.model.ApiResult;
 import com.weave.model.model.dto.PostDetailVo;
@@ -21,13 +21,12 @@ import java.util.List;
 @Log4j2
 @RestController
 @RequestMapping("/api/search")
+@RequiredArgsConstructor
 public class SearchController {
 
-    @Resource
-    private SearchService searchService;
+    private final SearchService searchService;
 
-    @Resource
-    private ConversionService conversionService;
+    private final ConversionService conversionService;
 
     /**
      * 搜索内容

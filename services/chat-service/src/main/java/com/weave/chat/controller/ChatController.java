@@ -8,20 +8,19 @@ import jakarta.annotation.Resource;
 import com.weave.chat.service.ConversationService;
 import com.weave.model.model.ApiResult;
 import com.weave.security.util.SecurityUtils;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/chat")
 public class ChatController {
 
-    @Resource
-    private ConversationService conversationService;
-    @Resource
-    private MessageService messageService;
-
+    private final ConversationService conversationService;
+    private final MessageService messageService;
 
     /**
      * 获取会话列表

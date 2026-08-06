@@ -8,7 +8,7 @@ import com.weave.user.model.eunms.RelationType;
 import com.weave.user.model.eunms.UserApiStatus;
 import com.weave.user.service.RelationService;
 import com.weave.security.util.SecurityUtils;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,11 +20,10 @@ import java.util.Set;
  */
 @RestController
 @RequestMapping("/api/user")
-
+@RequiredArgsConstructor
 public class RelationController {
 
-    @Resource
-    private RelationService relationService;
+    private final RelationService relationService;
 
     /**
      * 关注用户

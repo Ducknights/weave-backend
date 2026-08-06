@@ -8,7 +8,7 @@ import com.weave.club.model.vo.ActivityCardVo;
 import com.weave.club.service.ActivityService;
 import com.weave.redis.constant.CacheKey;
 import com.weave.club.model.enums.ClubApiStatus;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
@@ -20,10 +20,10 @@ import java.util.List;
 
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class ActivityServiceImp implements ActivityService {
 
-    @Autowired
-    private ActivityMapper activityMapper;
+    private final ActivityMapper activityMapper;
 
     @Override
     public Activity creatActivity(Activity activity) {

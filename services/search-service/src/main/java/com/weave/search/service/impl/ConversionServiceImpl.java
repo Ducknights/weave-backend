@@ -1,7 +1,7 @@
 package com.weave.search.service.impl;
 
 import com.weave.search.service.ConversionService;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.model.model.dto.PostDetailVo;
 import com.weave.search.feign.PostFeignClient;
@@ -15,10 +15,10 @@ import java.util.stream.Collectors;
 
 @Log4j2
 @Service
+@RequiredArgsConstructor
 public class ConversionServiceImpl implements ConversionService {
 
-    @Resource
-    private PostFeignClient postFeignClient;
+    private final PostFeignClient postFeignClient;
 
     @Override
     public List<PostDetailVo> convertToPostDetailVo(List<SearchResultDto> results) {

@@ -2,7 +2,7 @@ package com.weave.user.controller;
 
 import com.weave.user.model.dto.ActionDto;
 import com.weave.user.model.dto.ActionRecordsPageDto;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import com.weave.model.model.ApiResult;
 import com.weave.user.model.eunms.UserApiStatus;
 import com.weave.user.service.ActionService;
@@ -20,10 +20,10 @@ import static com.weave.user.model.eunms.ActionType.VIEW;
  */
 @RestController
 @RequestMapping("/api/user")
+@RequiredArgsConstructor
 public class UserActionController {
 
-    @Resource
-    private ActionService actionService;
+    private final ActionService actionService;
 
     /**
      * 获取用户收藏的帖子列表

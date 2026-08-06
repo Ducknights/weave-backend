@@ -11,7 +11,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import jakarta.annotation.PreDestroy;
-import jakarta.annotation.Resource;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Log4j2
 @Component
+@RequiredArgsConstructor
 public class RagGrpcClient {
 
     /** Python rag-py-service 在 Nacos 中注册的服务名 */
@@ -37,8 +38,7 @@ public class RagGrpcClient {
     @Value("${grpc.client.rag-service.fallback-address:127.0.0.1:6666}")
     private String fallbackAddress;
 
-    @Resource
-    private NacosServiceManager nacosServiceManager;
+    private final NacosServiceManager nacosServiceManager;
 
     private volatile ManagedChannel channel;
     private volatile RAGServiceGrpc.RAGServiceBlockingStub blockingStub;
