@@ -24,6 +24,12 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
+        <!-- CircuitBreaker熔断降级 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
+        </dependency>
+
         <!-- LoadBalancer负载均衡 -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
