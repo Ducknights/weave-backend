@@ -25,7 +25,7 @@ import com.weave.post.model.enums.PostActionType;
 import com.weave.post.model.enums.PostStateEvent;
 import com.weave.post.service.PostCommandService;
 import com.weave.rabbitmq.util.MQUtil;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +37,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
 
     private final PostMapper postMapper;
     private final PostResourceMapper postResourceMapper;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate redisTemplate;
     private final RedisUtil redisUtil;
     private final MQUtil mqUtil;
     private final PostStateMachineService stateMachineService;
@@ -174,7 +174,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         handlePostAction(userId, postId, PostActionType.VIEW);
         // 添加用户最近浏览（最近浏览功能用）- 使用ZSet按时间排序
         String userCacheKey = CacheKey.buildCacheKey(CacheKey.USER_VIEWED_POSTS, userId);
-        redisTemplate.opsForZSet().add(userCacheKey, postId, System.currentTimeMillis());
+        redisTemplate.opsForZSet().add(userCacheKey, String.valueOf(postId), System.currentTimeMillis());
     }
 
     /**

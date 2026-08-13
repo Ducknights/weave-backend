@@ -1,5 +1,6 @@
 package com.weave.post.model.enums;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import com.weave.redis.constant.CacheKey;
 import com.weave.model.constant.PostOperation;
@@ -8,6 +9,7 @@ import com.weave.model.constant.PostOperation;
  * 帖子操作类型枚举 - 封装所有帖子操作的配置信息
  */
 @Getter
+@AllArgsConstructor
 public enum PostActionType {
 
     VIEW(PostOperation.VIEW_COUNT, PostOperation.VIEW, CacheKey.USER_VIEWED_POSTS),
@@ -24,12 +26,6 @@ public enum PostActionType {
     private final String operation;
     // 用户缓存前缀
     private final String userCacheKeyPrefix;
-
-    PostActionType(String cacheField, String operation, String userCacheKeyPrefix) {
-        this.cacheField = cacheField;
-        this.operation = operation;
-        this.userCacheKeyPrefix = userCacheKeyPrefix;
-    }
 
     public boolean isIncrement() {
         return !name().startsWith("UN"); 

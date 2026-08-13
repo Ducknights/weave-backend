@@ -1,5 +1,6 @@
 package com.weave.post.model.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,6 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class PostDto {
+    @JsonFormat(shape = JsonFormat.Shape.STRING)
     private Long clubId;
     @NonNull
     private String title;
