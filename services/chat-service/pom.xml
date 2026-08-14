@@ -91,16 +91,6 @@
             <version>2.0.14</version>
         </dependency>
 
-        <!-- JWT (用于WebSocket握手token校验) -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-        </dependency>
-
         <!-- Infrastructure modules -->
         <dependency>
             <groupId>org.example</groupId>
@@ -109,6 +99,10 @@
         <dependency>
             <groupId>org.example</groupId>
             <artifactId>common-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>common-util</artifactId>
         </dependency>
         <dependency>
             <groupId>org.example</groupId>
