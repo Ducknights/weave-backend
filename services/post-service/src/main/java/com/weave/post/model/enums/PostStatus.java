@@ -11,7 +11,7 @@ import lombok.Getter;
  */
 @Getter
 public enum PostStatus {
-    PUBLISHED(1, "已发布"),
+    PUBLIC(1, "公开"),
     HIDDEN(2, "隐藏"),
     DELETED(3, "删除");
 

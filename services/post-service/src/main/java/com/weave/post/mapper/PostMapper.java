@@ -32,7 +32,7 @@ public interface PostMapper extends BaseMapper<Post> {
         }
         LambdaQueryWrapper<Post> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.in(Post::getPostId, needQueryIds);
-        queryWrapper.eq(Post::getStatus, PostStatus.PUBLISHED);
+        queryWrapper.eq(Post::getStatus, PostStatus.PUBLIC);
         return this.selectList(queryWrapper);
     }
 

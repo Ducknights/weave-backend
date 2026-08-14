@@ -24,7 +24,7 @@ public class PostStateMachineConfig extends EnumStateMachineConfigurerAdapter<Po
     public void configure(StateMachineStateConfigurer<PostStatus, PostStateEvent> states) throws Exception {
         states
                 .withStates()
-                .initial(PostStatus.PUBLISHED)
+                .initial(PostStatus.PUBLIC)
                 .end(PostStatus.DELETED)
                 .states(EnumSet.allOf(PostStatus.class));
     }
@@ -32,23 +32,23 @@ public class PostStateMachineConfig extends EnumStateMachineConfigurerAdapter<Po
     @Override
     public void configure(StateMachineTransitionConfigurer<PostStatus, PostStateEvent> transitions) throws Exception {
         transitions
-                // 隐藏已发布帖子: PUBLISHED -> HIDDEN
+                // 隐藏已发布帖子: PUBLIC -> HIDDEN
                 .withExternal()
-                    .source(PostStatus.PUBLISHED).target(PostStatus.HIDDEN)
+                    .source(PostStatus.PUBLIC).target(PostStatus.HIDDEN)
                     .event(PostStateEvent.HIDE)
                     .action(context -> log.info("帖子已隐藏"))
                     .and()
 
-                // 恢复隐藏帖子: HIDDEN -> PUBLISHED
+                // 恢复隐藏帖子: HIDDEN -> PUBLIC
                 .withExternal()
-                    .source(PostStatus.HIDDEN).target(PostStatus.PUBLISHED)
+                    .source(PostStatus.HIDDEN).target(PostStatus.PUBLIC)
                     .event(PostStateEvent.RESTORE)
                     .action(context -> log.info("帖子已恢复显示"))
                     .and()
 
-                // 从已发布删除: PUBLISHED -> DELETED
+                // 从已发布删除: PUBLIC -> DELETED
                 .withExternal()
-                    .source(PostStatus.PUBLISHED).target(PostStatus.DELETED)
+                    .source(PostStatus.PUBLIC).target(PostStatus.DELETED)
                     .event(PostStateEvent.DELETE)
                     .guard(notDeletedGuard())
                     .action(context -> log.info("已发布帖子已删除"))

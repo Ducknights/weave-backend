@@ -128,7 +128,7 @@ public class PostController {
     }
 
     /**
-     * 隐藏帖子: PUBLISHED -> HIDDEN
+     * 隐藏帖子: PUBLIC -> HIDDEN
      */
     @PutMapping("/{id}/hide")
     public ResponseEntity<ApiResult<Void>> hidePost(@PathVariable Long id) {
@@ -148,7 +148,7 @@ public class PostController {
     }
 
     /**
-     * 恢复帖子: HIDDEN -> PUBLISHED
+     * 恢复帖子: HIDDEN -> PUBLIC
      */
     @PutMapping("/{id}/restore")
     public ResponseEntity<ApiResult<Void>> restorePost(@PathVariable Long id) {

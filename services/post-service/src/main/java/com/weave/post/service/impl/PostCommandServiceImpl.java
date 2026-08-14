@@ -43,7 +43,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
     private final PostStateMachineService stateMachineService;
 
     /**
-     * 消费草稿审核通过消息，创建已发布帖子（初始状态: PUBLISHED）
+     * 消费草稿审核通过消息，创建已发布帖子（初始状态: PUBLIC）
      * 草稿与审核流程由 draft-service 负责，此处仅负责发布落库与同步。
      */
     @Override
@@ -53,7 +53,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
                 .clubId(message.getClubId())
                 .title(message.getTitle())
                 .content(message.getContent())
-                .status(PostStatus.PUBLISHED)
+                .status(PostStatus.PUBLIC)
                 .viewCount(0)
                 .likeCount(0)
                 .collectCount(0)
@@ -126,7 +126,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
     }
 
     /**
-     * 隐藏帖子: PUBLISHED -> HIDDEN
+     * 隐藏帖子: PUBLIC -> HIDDEN
      */
     @Override
     @RedisCacheEvent(value = CacheKey.POST_HASH, key = "#id")
@@ -146,7 +146,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
     }
 
     /**
-     * 恢复帖子: HIDDEN -> PUBLISHED
+     * 恢复帖子: HIDDEN -> PUBLIC
      */
     @Override
     public void restorePost(Long id, Long userId) {
