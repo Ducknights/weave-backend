@@ -4,7 +4,6 @@ import com.weave.chat.model.entity.Message;
 import com.weave.chat.model.enums.ChatApiStatus;
 import com.weave.chat.model.vo.ConversationVo;
 import com.weave.chat.service.MessageService;
-import jakarta.annotation.Resource;
 import com.weave.chat.service.ConversationService;
 import com.weave.model.model.ApiResult;
 import com.weave.security.util.SecurityUtils;
