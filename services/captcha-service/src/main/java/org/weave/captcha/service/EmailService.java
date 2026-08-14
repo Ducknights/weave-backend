@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.redis.annotation.RedisCachePut;
 import com.weave.redis.constant.CacheKey;
-import com.weave.redis.util.RedisUtil;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -15,7 +14,6 @@ import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
 import java.io.UnsupportedEncodingException;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -31,7 +29,6 @@ public class EmailService {
 
     private final JavaMailSender javaMailSender;
     private final TemplateEngine templateEngine;
-    private final RedisUtil redisUtil;
 
     @Value("${app.email.from-name}")
     private String fromName;
@@ -94,11 +91,6 @@ public class EmailService {
      */
     @RedisCachePut(value = CacheKey.CAPTCHA, key = "#email", expire = 60 * 5)
     public Integer sendVerificationCodeEmail(String email) {
-        String lock = CacheKey.buildCacheKey("lock:" + CacheKey.CAPTCHA, email);
-        if (Boolean.TRUE.equals(redisUtil.hasKey(lock))) {
-            log.warn("验证码已发送，请勿重复发送{}", email);
-            return null;
-        }
 
         // 生成6位验证码
         int verificationCode = ThreadLocalRandom.current().nextInt(100000, 1000000);
@@ -109,8 +101,6 @@ public class EmailService {
 
         // 发送模板邮件
         sendTemplateEmail(email, "邮箱验证码", "email-template", contextVariables);
-
-        redisUtil.set(lock, true, Duration.ofMinutes(1));
 
         return verificationCode;
     }

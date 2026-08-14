@@ -1,14 +1,11 @@
 package org.weave.captcha.consumer;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.weave.captcha.service.EmailService;
 import com.weave.rabbitmq.constant.MQueue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 /**
      * 邮件控制器
@@ -16,10 +13,10 @@ import java.util.Map;
      */
 @Log4j2
 @RestController
+@RequiredArgsConstructor
 public class EmailConsumer {
 
-    @Autowired
-    private EmailService emailService;
+    private final EmailService emailService;
 
     /**
      * 使用RabbitMQ监听队列的方法，处理发送验证码邮件的请求
@@ -33,15 +30,4 @@ public class EmailConsumer {
         emailService.sendVerificationCodeEmail(email);
     }
 
-    /**
-     * 健康检查接口
-     * GET /api/captcha/health
-     */
-    @GetMapping("/api/captcha/health")
-    public ResponseEntity<Map<String, Object>> healthCheck() {
-        return ResponseEntity.ok(Map.of(
-                "status", "UP",
-                "message", "服务运行正常",
-                "timestamp", System.currentTimeMillis()));
-    }
 }
