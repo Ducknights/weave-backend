@@ -77,16 +77,6 @@
             <artifactId>mybatis-plus-jsqlparser</artifactId>
         </dependency>
 
-        <!-- JWT -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-        </dependency>
-
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -108,6 +98,10 @@
         <dependency>
             <groupId>org.example</groupId>
             <artifactId>common-model</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.example</groupId>
+            <artifactId>common-util</artifactId>
         </dependency>
         <dependency>
             <groupId>org.example</groupId>
@@ -136,10 +130,6 @@
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.example</groupId>
-            <artifactId>common-util</artifactId>
         </dependency>
     </dependencies>
 </project>

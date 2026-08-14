@@ -6,17 +6,13 @@ import com.weave.redis.util.RedisUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.redis.core.RedisTemplate;
 
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 public class AuthTest {
-
-    @Autowired
-    private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
     private RedisUtil redisUtil;
@@ -35,7 +31,7 @@ public class AuthTest {
     @Test
     public void testLogin() {
         String key = CacheKey.buildCacheKey(CacheKey.CAPTCHA, "2897662424@qq.com");
-        redisTemplate.opsForValue().set(key, 123456, 5, TimeUnit.MINUTES);
+        redisUtil.set(key, 123456, Duration.ofMinutes(5));
     }
 
     /**
