@@ -175,6 +175,8 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         // 添加用户最近浏览（最近浏览功能用）- 使用ZSet按时间排序
         String userCacheKey = CacheKey.buildCacheKey(CacheKey.USER_VIEWED_POSTS, userId);
         redisTemplate.opsForZSet().add(userCacheKey, String.valueOf(postId), System.currentTimeMillis());
+        // 裁剪ZSet，最多保留最近1000条浏览记录，防止无限增长
+        redisTemplate.opsForZSet().removeRange(userCacheKey, 0, -1001);
     }
 
     /**
@@ -182,6 +184,14 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
      */
     @Override
     public void like(Long userId, Long postId) {
+        // 校验帖子存在且状态允许交互
+        validatePost(postId);
+        // 检查是否已点赞：查用户点赞缓存集合
+        String likedKey = CacheKey.buildCacheKey(CacheKey.USER_LIKED_POSTS, userId);
+        if (Boolean.TRUE.equals(redisUtil.isMember(likedKey, postId))) {
+            // 已点赞直接返回，避免重复计数
+            return;
+        }
         handlePostAction(userId, postId, PostActionType.LIKE);
     }
 
@@ -190,6 +200,14 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
      */
     @Override
     public void unLike(Long userId, Long postId) {
+        // 校验帖子存在且状态允许交互
+        validatePost(postId);
+        // 检查是否已点赞：查用户点赞缓存集合
+        String likedKey = CacheKey.buildCacheKey(CacheKey.USER_LIKED_POSTS, userId);
+        if (!Boolean.TRUE.equals(redisUtil.isMember(likedKey, postId))) {
+            // 尚未点赞则直接返回，避免计数变负
+            return;
+        }
         handlePostAction(userId, postId, PostActionType.UNLIKE);
     }
 
@@ -198,6 +216,13 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
      */
     @Override
     public void collect(Long userId, Long postId) {
+        // 校验帖子存在且状态允许交互
+        validatePost(postId);
+        // 检查是否已收藏
+        String collectedKey = CacheKey.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, userId);
+        if (Boolean.TRUE.equals(redisUtil.isMember(collectedKey, postId))) {
+            return;
+        }
         handlePostAction(userId, postId, PostActionType.COLLECT);
     }
 
@@ -206,6 +231,13 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
      */
     @Override
     public void unCollect(Long userId, Long postId) {
+        // 校验帖子存在且状态允许交互
+        validatePost(postId);
+        // 检查是否已收藏
+        String collectedKey = CacheKey.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, userId);
+        if (!Boolean.TRUE.equals(redisUtil.isMember(collectedKey, postId))) {
+            return;
+        }
         handlePostAction(userId, postId, PostActionType.UNCOLLECT);
     }
 
@@ -218,11 +250,21 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
     private void handlePostAction(Long userId, Long postId, PostActionType actionType) {
         // 更新帖子缓存
         String postCacheKey = CacheKey.buildCacheKey(CacheKey.POST_HASH, postId);
-        redisUtil.incrementHash(postCacheKey, actionType.getCacheField(), actionType.isIncrement() ? 1 : -1);
-
+        long delta = actionType.isIncrement() ? 1 : -1;
+        redisUtil.incrementHash(postCacheKey, actionType.getCacheField(), delta);
         // 发送消息到 MQ（异步处理用户行为）
         log.info("发送帖子行为消息: userId={}, postId={}, operation={}", userId, postId, actionType.getOperation());
         sendPostActionMessage(userId, postId, actionType.getOperation());
+    }
+
+    /**
+     * 获取允许交互的帖子：必须存在且是公开状态
+     */
+    private void validatePost(Long postId) {
+        Post post = postMapper.selectById(postId);
+        if (post == null || post.getStatus() != PostStatus.PUBLIC) {
+            throw new BusinessException(PostApiStatus.POST_NOT_FOUND);
+        }
     }
 
     /**
