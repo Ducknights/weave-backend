@@ -109,7 +109,7 @@ public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implemen
         // 1，查询帖子
         Page<Post> pageParam = new Page<>(page, size);
         LambdaQueryWrapper<Post> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Post::getStatus, PostStatus.PUBLISHED)
+        wrapper.eq(Post::getStatus, PostStatus.PUBLIC)
                 .orderByDesc(Post::getCreatedTime);
         Page<Post> postPage = postMapper.selectPage(pageParam, wrapper);
         if (postPage.getRecords().isEmpty()){ throw new BusinessException(PostApiStatus.POST_NOT_FOUND); }
@@ -122,14 +122,19 @@ public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implemen
      */
     @Override
     public List<PostDetailVo> getHotPosts(int page, int size) {
-        int limit = (page - 1) * size;
-        if (limit <= 0) limit = 10;
-        List<Long> hotPostIds = recommendFeignClient.getRecommendations(null, limit);
-        if (CollectionUtils.isEmpty(hotPostIds)){
-            throw new BusinessException(PostApiStatus.POST_NOT_FOUND);
+        // 推荐服务接口只支持返回TopN列表，分页通过在结果集中 subList(offset) 实现
+        int offset = Math.max(0, (page - 1) * size);
+        int fetchLimit = offset + size;
+        List<Long> hotPostIds = recommendFeignClient.getRecommendations(null, fetchLimit);
+        if (CollectionUtils.isEmpty(hotPostIds) || hotPostIds.size() <= offset){
+            return List.of();
         }
+        // 跳过前offset条，取本页
+        List<Long> pageIds = hotPostIds.size() > fetchLimit
+                ? hotPostIds.subList(offset, offset + size)
+                : hotPostIds.subList(offset, hotPostIds.size());
         // 根据ID列表批量获取帖子
-        return getPostsByIds(hotPostIds);
+        return getPostsByIds(pageIds);
     }
 
     /**
