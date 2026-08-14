@@ -18,6 +18,16 @@
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
 
+        <!-- 限流熔断-->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-sentinel</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-alibaba-sentinel-gateway</artifactId>
+        </dependency>
+
         <!-- 服务发现 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -39,8 +49,8 @@
 
         <!-- Redis -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>org.example</groupId>
+            <artifactId>redis-spring-boot-starter</artifactId>
         </dependency>
 
         <!-- Micrometer Tracing (替代Sleuth) -->
