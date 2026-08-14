@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
      * 处理业务异常 —— 各服务的 BusinessException 均继承 AbstractBusinessException
      */
     @ExceptionHandler(AbstractBusinessException.class)
-    public ResponseEntity<?> handleBusinessException(AbstractBusinessException e) {
+    public ResponseEntity<ApiResult<?>> handleBusinessException(AbstractBusinessException e) {
         log.warn("业务异常: {}", e.getMessage());
         return ResponseEntity.status(e.getStatus().getCode())
                 .body(e.getStatus().response());
