@@ -3,6 +3,8 @@ package com.weave.gateway.config;
 import com.alibaba.csp.sentinel.adapter.gateway.sc.SentinelGatewayFilter;
 import com.alibaba.csp.sentinel.adapter.gateway.sc.callback.GatewayCallbackManager;
 import com.alibaba.csp.sentinel.adapter.gateway.sc.exception.SentinelGatewayBlockExceptionHandler;
+import com.weave.gateway.sentinel.SentinelGatewayBlockHandler;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
@@ -38,5 +40,13 @@ public class SentinelGatewayConfig {
     @Order(Ordered.HIGHEST_PRECEDENCE)
     public SentinelGatewayBlockExceptionHandler sentinelGatewayBlockExceptionHandler() {
         return new SentinelGatewayBlockExceptionHandler(viewResolvers, serverCodecConfigurer);
+    }
+
+    /**
+     * 注册自定义的 BlockHandler，替换 Sentinel 默认的返回
+     */
+    @PostConstruct
+    public void initBlockHandler() {
+        GatewayCallbackManager.setBlockHandler(new SentinelGatewayBlockHandler());
     }
 }
