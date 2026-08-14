@@ -3,7 +3,6 @@ package com.weave.chat.service.impl;
 import com.weave.chat.feign.UserInfoFeign;
 import com.weave.chat.mapper.ConversationMapper;
 import com.weave.chat.mapper.ConversationMemberMapper;
-import com.weave.chat.model.constant.CachePrefix;
 import com.weave.chat.model.constant.CacheTTL;
 import com.weave.chat.model.dto.ConversationMemberParam;
 import com.weave.chat.model.entity.Conversation;
@@ -67,13 +66,13 @@ public class ConversationServiceImpl implements ConversationService {
      * @param content 内容
      */
     @Override
-    @RedisCacheEvent(value = CachePrefix.CONVERSATION, key = "#userId")
+    @RedisCacheEvent(value = CacheKey.CONVERSATION, key = "#userId")
     public void updateConversation(Long userId, Long conversationId, String content) {
         conversationMapper.updateConversation(conversationId, content);
     }
 
     /**
-     * 获取会话列表
+     * 获取会话Vo列表
      */
     @Override
     public List<ConversationVo> getConversations(Long userId) {
@@ -82,18 +81,19 @@ public class ConversationServiceImpl implements ConversationService {
         if (conversations == null || conversations.isEmpty()) {
             return Collections.emptyList();
         }
-        List<ConversationVo> conversationVos = convertToConversationVo(userId, conversations);
-        CacheConversationVo(conversationVos);
-        return conversationVos;
+        return convertToConversationVo(userId, conversations);
     }
 
-    @RedisCacheable(value = CachePrefix.CONVERSATION, key = "#userId")
+    /**
+     * 查找用户会话
+     */
+    @RedisCacheable(value = CacheKey.CONVERSATION, key = "#userId", expire = CacheTTL.CONVERSATION_TTL)
     private List<Conversation> findConversationsByUserId(Long userId) {
         return conversationMapper.findByUserId(userId);
     }
 
     /**
-     * 转换为会话VO列表
+     * 将会话列表转换为会话VO列表
      */
     private List<ConversationVo> convertToConversationVo(Long userId, List<Conversation> conversations) {
         // 获取会话ID列表
@@ -138,12 +138,5 @@ public class ConversationServiceImpl implements ConversationService {
                 .otherUserAvatar(userDto.getAvatar())
                 .online(redisUtil.hasKey(CacheKey.buildCacheKey(CacheKey.USER_ONLINE, otherUserId)))
                 .build();
-    }
-
-    private void CacheConversationVo(List<ConversationVo> conversationVos) {
-        for (ConversationVo conversationVo : conversationVos){
-            String cacheKey = CacheKey.buildCacheKey(CachePrefix.CONVERSATION, conversationVo.getUserId() + ":" + conversationVo.getOtherUserId());
-            redisUtil.set(cacheKey, conversationVo, CacheTTL.CONVERSATION_CACHE_TTL);
-        }
     }
 }

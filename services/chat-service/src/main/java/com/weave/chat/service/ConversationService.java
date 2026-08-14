@@ -10,5 +10,5 @@ public interface ConversationService {
 
     Long getOrCreatePrivateConversation(Long userId1, Long userId2);
 
-    void updateConversation(Long conversationId, String content);
+    void updateConversation(Long userId, Long conversationId, String content);
 }

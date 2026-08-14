@@ -46,7 +46,7 @@ public class SocketIOEventHandler {
     private final SocketIOServer socketIOServer;
     private final MessageService messageService;
     private final ConversationMemberService conversationMemberService;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final StringRedisTemplate redisTemplate;
     private final RedisUtil redisUtil;
     private final MQUtil mqUtil;
     // 用户ID -> SocketIOClient 映射
