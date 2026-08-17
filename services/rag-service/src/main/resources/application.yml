@@ -1,5 +1,5 @@
 server:
-  port: 4710
+  port: 4900
 
 spring:
   application:
@@ -12,6 +12,7 @@ spring:
 # gRPC 客户端配置 — 通过 Nacos 发现 Python rag-py-service
 grpc:
   client:
-    rag-service:
-      nacos-name: rag-engine         # Python 服务在 Nacos 中的注册名
-      nacos-group: DEFAULT_GROUP
+#    自定义的名字，和Client对应
+    ragEngine:
+      address: discovery:///rag-engine
+      negotiation-type: PLAINTEXT

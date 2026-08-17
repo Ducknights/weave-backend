@@ -1,6 +1,7 @@
 package com.weave.rag.controller;
 
 import com.weave.rag.client.RagGrpcClient;
+import com.weave.rag.model.QuestionDto;
 import io.grpc.StatusRuntimeException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -10,7 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,7 +22,7 @@ public class RagController {
 
     private final RagGrpcClient ragGrpcClient;
 
-    private final ExecutorService streamExecutor = Executors.newCachedThreadPool();
+    private final ExecutorService streamExecutor = Executors.newFixedThreadPool(20);
 
     /**
      * 健康检查
@@ -37,9 +37,9 @@ public class RagController {
      */
     // TODO:期待以后持久化对话吧
     @PostMapping(value = "/ask/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter askStream(@RequestBody Map<String, String> body) {
+    public SseEmitter askStream(@RequestBody QuestionDto questionDto) {
         SseEmitter emitter = new SseEmitter(0L);
-        String question = body.getOrDefault("question", "").trim();
+        String question = questionDto.getQuestion().trim();
 
         if (question.isEmpty()) {
             return completeWithMessage(emitter, "[错误] 问题不能为空");
