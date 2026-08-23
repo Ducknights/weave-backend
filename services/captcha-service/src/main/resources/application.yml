@@ -2,28 +2,20 @@ server:
   port: 4200
 
 spring:
+  profiles:
+    active: dev
   application:
     name: captcha-service
-  
   cloud:
     nacos:
       discovery:
-        server-addr: 127.0.0.1:8848
-  
-  zipkin:
-    base-url: http://localhost:9411
-  
-  tracing:
-    baggage:
-      remote-fields:
-        - X-User-Id
-  
+        server-addr: ${NACOS_SERVER_ADDR}
   # RabbitMQ配置
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
     virtual-host: /
     listener:
       simple:
@@ -50,9 +42,9 @@ spring:
     # 配置端口，QQ邮箱：587
     port: 587
     # 配置发送邮件的邮箱地址
-    username: 2897662424@qq.com
+    username: ${MAIL_USERNAME}
     # 配置邮箱授权码（不是登录密码，是邮箱提供的授权码）
-    password: jcsdpyshmpxsdffd
+    password: ${MAIL_PASSWORD}
     # 配置邮件协议
     protocol: smtp
     # 默认编码
@@ -82,4 +74,4 @@ app:
   email:
     from-name: 纹理
     # 配置默认回复邮箱
-    reply-to: 2897662424@qq.com
+    reply-to: ${MAIL_USERNAME}
