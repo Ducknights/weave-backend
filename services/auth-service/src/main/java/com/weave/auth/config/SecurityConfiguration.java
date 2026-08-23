@@ -50,8 +50,8 @@ public class SecurityConfiguration {
                                 "/v3/api-docs/**",
                                 "/api/auth/login",
                                 "/api/auth/register/**",
-                                "/api/auth/access",
-                                "/api/auth/refresh"
+                                "/api/auth/refresh",
+                                "/api/auth/logout"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

@@ -1,6 +1,7 @@
 package com.weave.auth.service;
 
 
+import com.weave.auth.event.UserAuthoritiesRefreshEvent;
 import com.weave.auth.exception.BusinessException;
 import com.weave.auth.mapper.AuthMapper;
 import com.weave.auth.model.dto.*;
@@ -16,6 +17,7 @@ import com.weave.util.JwtUtil;
 import com.weave.redis.util.RedisUtil;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -28,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.weave.auth.model.constans.CaCheTTL.*;
@@ -45,6 +48,7 @@ public class AuthService {
     private final MQUtil mqUtil;
     private final RedisUtil redisUtil;
     private final RedissonClient redissonClient;
+    private final ApplicationEventPublisher eventPublisher;
 
 
     public LoginResDto login(ApiRequestDto apiRequestDto) {
@@ -84,9 +88,61 @@ public class AuthService {
             log.error("登录失败: {}", e.getMessage());
             throw new BusinessException(AuthApiStatus.LOGIN_FAILED);
         }
-        return loginResDto;
+        throw new BusinessException(AuthApiStatus.LOGIN_FAILED);
     }
 
+    /**
+     * 获取访问令牌
+     */
+    public TokenDto getAccessToken(Long userId) {
+        // 生成Redis键
+        String permissionsKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
+        // 生成JWT令牌
+        String access_token = JwtUtil.generateJwtToken(permissionsKey, ACCESS_TOKEN_TTL_MILLIS);
+        // 构造返回DTO
+        return new TokenDto(access_token, ACCESS_TOKEN_TTL_MILLIS);
+    }
+
+    /**
+     * 获取刷新令牌
+     */
+    public String getRefreshToken(Long userId) {
+        // 生成Redis键
+        String permissionsKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
+        return JwtUtil.generateJwtToken(permissionsKey,REFRESH_TOKEN_TTL_MILLIS);
+    }
+
+    /**
+     * 获取新访问令牌
+     */
+    public TokenDto getNewAccessToken(String refreshToken) {
+        try {
+            // 生成访问令牌
+            Long userId = Long.valueOf(JwtUtil.getUserIdFromJWT(refreshToken));
+            TokenDto dto = getAccessToken(userId);
+            // 异步刷新用户权限缓存
+            eventPublisher.publishEvent(new UserAuthoritiesRefreshEvent(this, userId));
+            // 3. 构造返回DTO
+            return dto;
+        }catch (Exception e){
+            throw new BusinessException(AuthApiStatus.TOKEN_GENERATE_FAILED);
+        }
+    }
+
+    /**
+     * 获取新刷新令牌
+     */
+    public Optional<String> getNewRefreshToken(String refreshToken) {
+        if (JwtUtil.getExpirationFromJWT(refreshToken) < TOKEN_ROTATION_THRESHOLD){
+            Long userId = Long.valueOf(JwtUtil.getUserIdFromJWT(refreshToken));
+            return Optional.of(getRefreshToken(userId));
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * 发送验证码
+     */
     public void sendCode(ApiRequestDto apiRequestDto) {
         String email = apiRequestDto.email();
         // Redisson 分布式锁：1分钟内不可重试
@@ -157,45 +213,5 @@ public class AuthService {
         } catch (Exception e) {
             throw new BusinessException(AuthApiStatus.LOGOUT_FAILED);
         }
-    }
-
-    public TokenDto getNewSuccessToken(Long userId) {
-        try {
-            // 1. 生成JWT令牌
-            String subject = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
-            String access_token = JwtUtil.generateJwtToken(subject, ACCESS_TOKEN_TTL_MILLIS);
-            // 2. 缓存用户权限
-            cacheUserAuthorities(userId);
-            // 3. 构造返回DTO
-            return new TokenDto(access_token, ACCESS_TOKEN_TTL_MILLIS,null , null);
-        } catch (Exception e) {
-            throw new BusinessException(AuthApiStatus.TOKEN_GENERATE_FAILED);
-        }
-    }
-
-    public TokenDto getNewRefreshToken(Long userId){
-        try {
-            // 1. 生成JWT令牌
-            String subject = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
-            String refresh_token = JwtUtil.generateJwtToken(subject, REFRESH_TOKEN_TTL_MILLIS);
-            // 2. 重新缓存用户权限信息
-            cacheUserAuthorities(userId);
-            // 3. 构造返回DTO
-            return new TokenDto(null,null , refresh_token, REFRESH_TOKEN_TTL_MILLIS);
-        } catch (Exception e) {
-            throw new BusinessException(AuthApiStatus.TOKEN_GENERATE_FAILED);
-        }
-    }
-
-    private void cacheUserAuthorities(Long userId) {
-        // 1. 从数据库重新加载用户角色和权限
-        CustomUserDetails userDetails = authMapper.selectUserDetailsById(userId);
-        if (userDetails == null) {
-            throw new BusinessException(AuthApiStatus.USER_NOT_FOUND);
-        }
-        // 2. 缓存到 Redis
-        String cacheKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
-        redisUtil.set(cacheKey, userDetails, Duration.ofMinutes(USER_AUTHORITY_TTL_MINUTES));
-        log.info("已刷新用户权限缓存: userId={}", userId);
     }
 }
