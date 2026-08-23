@@ -1,34 +1,26 @@
+server:
+  port: 4000
+
 spring:
+  profiles:
+    active: dev
   application:
     name: auth-service
-
   cloud:
     nacos:
-      server-addr: 127.0.0.1:8848
+      server-addr: ${NACOS_SERVER_ADDR} # Nacos 服务器地址
     loadbalancer:
       cache:
-        enabled: true
-  # Feign 客户端配置
-  feign:
-    circuitbreaker:
-      enabled: true  # 启用断路器
-    client:
-      config:
-        default:
-          connectTimeout: 5000  # 连接超时时间 (毫秒)
-          readTimeout: 10000    # 读取超时时间 (毫秒)
-    httpclient:
-      enabled: false  # 禁用Apache HttpClient，使用URLConnection
-    okhttp:
-      enabled: true   # 启用OkHttp
-
-  # 数据源配置
+        enabled: true # 负载均衡缓存
+    openfeign:
+      circuitbreaker:
+        enabled: true # 开启熔断器
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/weave-auth
-    username: root
-    password: ALIEZ2436946
+    url: ${DB_URL} # 数据库地址
+    username: ${DB_USERNAME}  # 数据库用户名
+    password: ${DB_PASSWORD}  # 数据库密码
     druid:
       initial-size: 5
       min-idle: 5
@@ -44,8 +36,8 @@ spring:
   # Redis 配置
   data:
     redis:
-      host: 127.0.0.1
-      port: 6379
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
       database: 0
       timeout: 3000ms # 连接超时时间
       lettuce:
@@ -57,10 +49,10 @@ spring:
 
   # RabbitMQ 配置
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: admin
-    password: admin
+    host: ${RABBITMQ_HOST}  # RabbitMQ 主机地址
+    port: ${RABBITMQ_PORT}  # RabbitMQ 端口号
+    username: ${RABBITMQ_USERNAME}  # RabbitMQ 用户名
+    password: ${RABBITMQ_PASSWORD}  # RabbitMQ 密码
     virtual-host: /
     # 消息确认机制
     publisher-confirm-type: correlated # 发送确认
@@ -73,9 +65,6 @@ spring:
         retry:
           enabled: true # 开启重试
           max-attempts: 3 # 最大重试次数
-
-server:
-  port: 4000
 
 management:
   tracing:
