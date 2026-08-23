@@ -13,6 +13,8 @@ spring:
       # AUTH (认证)
       - POST:/api/auth/login
       - POST:/api/auth/register/**
+      - POST:/api/auth/logout
+      - GET:/api/auth/refresh
       # COMMENT (评论)
       - GET:/api/comment/**
       # CHAT (WebSocket握手)
