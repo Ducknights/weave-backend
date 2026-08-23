@@ -18,4 +18,13 @@ public class GatewayExceptionHandler {
                 .status(e.getStatus().getCode())
                 .body(e.getStatus().response()));
     }
+
+    @ExceptionHandler(RuntimeException.class)
+    public Mono<ResponseEntity<?>> handleRuntimeException(
+            RuntimeException e) {
+        log.warn("运行时异常: {}", e.getMessage());
+        return Mono.just(ResponseEntity
+                .status(500)
+                .body("服务器错误"));
+    }
 }
