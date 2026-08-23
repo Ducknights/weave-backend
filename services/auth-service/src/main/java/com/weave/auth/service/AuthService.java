@@ -50,9 +50,10 @@ public class AuthService {
     private final RedissonClient redissonClient;
     private final ApplicationEventPublisher eventPublisher;
 
-
-    public LoginResDto login(ApiRequestDto apiRequestDto) {
-        LoginResDto loginResDto = null;
+    /**
+     * 登录
+     */
+    public UserDto login(ApiRequestDto apiRequestDto) {
         try {
             // 使用Spring Security进行认证
             Authentication authentication = authenticationManager.authenticate(
@@ -69,20 +70,13 @@ public class AuthService {
                 Long userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
                 // 生成Redis键
                 String permissionsKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
-                // 生成JWT令牌
-                String access_token = JwtUtil.generateJwtToken(permissionsKey, ACCESS_TOKEN_TTL_MILLIS);
-                String refresh_token = JwtUtil.generateJwtToken(permissionsKey,REFRESH_TOKEN_TTL_MILLIS);
                 // 写入用户标识信息到redis
                 redisUtil.set(permissionsKey, authentication.getPrincipal(), Duration.ofMinutes(USER_AUTHORITY_TTL_MINUTES));
-                // 构造返回DTO
-                TokenDto tokenDto = new TokenDto(access_token, ACCESS_TOKEN_TTL_MILLIS, refresh_token, REFRESH_TOKEN_TTL_MILLIS);
                 // 获取用户信息
                 UserBriefDto userBriefDto = userFeignClient.getUserBriefById(userId);
                 // 获取用户角色
                 List<String> roleNames = ((CustomUserDetails) authentication.getPrincipal()).getRoles();
-                UserDto userDto = new UserDto(userId, userBriefDto.getName(), userBriefDto.getAvatar(), roleNames);
-                // 构建响应DTO
-                loginResDto = new LoginResDto(tokenDto, userDto);
+                return new UserDto(userId, userBriefDto.getName(), userBriefDto.getAvatar(), roleNames);
             }
         } catch (Exception e) {
             log.error("登录失败: {}", e.getMessage());
@@ -177,6 +171,9 @@ public class AuthService {
         }
     }
 
+    /**
+     * 验证验证码
+     */
     public void verifyCode(VerifyCodeDto dto) {
         // 1. 验证验证码
         String key = CacheKey.buildCacheKey(CacheKey.CAPTCHA, dto.email());
@@ -192,7 +189,10 @@ public class AuthService {
         register(dto);
     }
 
-    public void register(VerifyCodeDto dto) {
+    /**
+     * 注册
+     */
+    private void register(VerifyCodeDto dto) {
         try {
             UserDetails user = User.builder()
                     .username(dto.email())
@@ -204,6 +204,9 @@ public class AuthService {
         }
     }
 
+    /**
+     * 登出
+     */
     public void logout(Long userId){
         try {
             redisUtil.delete(CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId));
