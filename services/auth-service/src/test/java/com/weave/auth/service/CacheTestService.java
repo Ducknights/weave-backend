@@ -1,6 +1,6 @@
 package com.weave.auth.service;
 
-import com.weave.redis.annotation.RedisCacheEvent;
+import com.weave.redis.annotation.RedisCacheEvict;
 import com.weave.redis.annotation.RedisCachePut;
 import com.weave.redis.annotation.RedisCacheable;
 import org.springframework.stereotype.Service;
@@ -26,7 +26,7 @@ public class CacheTestService {
     /** 记录 @RedisCachePut 方法实际被调用的次数 */
     private final AtomicInteger cachePutCallCount = new AtomicInteger(0);
 
-    /** 记录 @RedisCacheEvent 方法实际被调用的次数 */
+    /** 记录 @RedisCacheEvict 方法实际被调用的次数 */
     private final AtomicInteger cacheEventCallCount = new AtomicInteger(0);
 
     // ==================== getter（必须通过方法访问，CGLIB 代理下直接访问字段会为 null） ====================
@@ -60,9 +60,9 @@ public class CacheTestService {
     }
 
     /**
-     * 删除操作 —— @RedisCacheEvent：执行方法后清除缓存
+     * 删除操作 —— @RedisCacheEvict：执行方法后清除缓存
      */
-    @RedisCacheEvent(value = CACHE_PREFIX, key = "#id")
+    @RedisCacheEvict(value = CACHE_PREFIX, key = "#id")
     public String deleteById(Long id) {
         cacheEventCallCount.incrementAndGet();
         return mockDb.remove(id);
@@ -106,7 +106,7 @@ public class CacheTestService {
         return dto;
     }
 
-    @RedisCacheEvent(value = CACHE_PREFIX + ":user", key = "#id")
+    @RedisCacheEvict(value = CACHE_PREFIX + ":user", key = "#id")
     public void deleteComplexUser(Long id) {
         mockUserDb.remove(id);
     }

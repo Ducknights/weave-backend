@@ -44,7 +44,7 @@ public class AuthTest {
             long emailHead = 2897662424L + i;
             String email = emailHead + emailSuffix;
             System.out.println(email);
-            authService.register(new VerifyCodeDto(email, "123456", 123456));
+//            authService.register(new VerifyCodeDto(email, "123456", 123456));
         }
     }
 
@@ -147,10 +147,10 @@ public class AuthTest {
         assertEquals(3, cacheTestService.getCachePutCallCount(), "@RedisCachePut 应每次都执行方法");
     }
 
-    // ==================== @RedisCacheEvent 测试 ====================
+    // ==================== @RedisCacheEvict 测试 ====================
 
     /**
-     * 调用 @RedisCacheEvent 后，缓存被清除，下次调用穿透到方法
+     * 调用 @RedisCacheEvict 后，缓存被清除，下次调用穿透到方法
      */
     @Test
     public void testCacheEvent_Evict() {
@@ -165,7 +165,7 @@ public class AuthTest {
         cacheTestService.getById(id);
         assertEquals(1, cacheTestService.getCacheableCallCount());
 
-        // 调用 @RedisCacheEvent 清除缓存
+        // 调用 @RedisCacheEvict 清除缓存
         String deleted = cacheTestService.deleteById(id);
         assertEquals("data", deleted);
         assertEquals(1, cacheTestService.getCacheEventCallCount());
