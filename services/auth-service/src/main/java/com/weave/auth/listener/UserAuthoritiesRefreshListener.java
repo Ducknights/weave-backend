@@ -34,7 +34,7 @@ public class UserAuthoritiesRefreshListener {
                 return;
             }
             String cacheKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
-            redisUtil.set(cacheKey, userDetails, Duration.ofMinutes(USER_AUTHORITY_TTL_MINUTES));
+            redisUtil.setFixed(cacheKey, userDetails, Duration.ofMinutes(USER_AUTHORITY_TTL_MINUTES));
             log.info("已刷新用户权限缓存: userId={}", userId);
         } catch (Exception e) {
             log.error("刷新用户权限缓存异常: userId={}", userId, e);
