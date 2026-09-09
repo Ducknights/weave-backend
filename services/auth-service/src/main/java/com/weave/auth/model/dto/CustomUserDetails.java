@@ -1,7 +1,5 @@
 package com.weave.auth.model.dto;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -16,33 +14,30 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class CustomUserDetails implements UserDetails {
 
-    @TableId  // 指定主键
     private Long userId;
 
-    @TableField("email") // 邮箱字段
+    @JsonIgnore
     private String username;
 
-    @JsonIgnore // 忽略密码字段，防止序列化时输出
+    @JsonIgnore
     private String password;
 
-    @TableField(exist = false) // 非数据库字段，角色
+
     private List<String> roles;
 
-    @TableField(exist = false) // 非数据库字段，权限列表
     private List<String> authorities;
 
     @JsonIgnore
-    @TableField(exist = false)
     private String rolesStr;
 
     @JsonIgnore
-    @TableField(exist = false)
     private String authoritiesStr;
 
     // 获取 roles，如果为空则从 rolesStr 转换
@@ -75,9 +70,15 @@ public class CustomUserDetails implements UserDetails {
     @Override
     @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        List<String> authorities = getAuthoritiesList();
-        return authorities.stream()
+        List<GrantedAuthority> roleAuthorities = roles != null
+                ? roles.stream()
+                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
+                        .collect(Collectors.toList())
+                : Collections.emptyList();
+        List<GrantedAuthority> permissionAuthorities = getAuthoritiesList().stream()
                 .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+        return Stream.concat(roleAuthorities.stream(), permissionAuthorities.stream())
                 .collect(Collectors.toList());
     }
 
@@ -88,6 +89,7 @@ public class CustomUserDetails implements UserDetails {
     }
 
     @Override
+    @JsonIgnore
     public String getUsername() {
         return username;
     }
