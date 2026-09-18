@@ -78,7 +78,7 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<ApiResult<Void>> logout(@CookieValue(value = Header.REFRESH_TOKEN) String refreshToken) {
-        Long userId = Long.valueOf(JwtUtil.getUserIdFromJWT(refreshToken));
+        Long userId = JwtUtil.getUserIdFromJWT(refreshToken);
         // 清除当前用户的登录信息
         authService.logout(userId);
         // 清除刷新令牌

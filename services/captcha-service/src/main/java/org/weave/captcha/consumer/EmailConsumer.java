@@ -2,17 +2,17 @@ package org.weave.captcha.consumer;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Component;
 import org.weave.captcha.service.EmailService;
 import com.weave.rabbitmq.constant.MQueue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.web.bind.annotation.*;
 
 /**
-     * 邮件控制器
-     * 提供RESTful API接口和RabbitMQ队列来发送各种类型的邮件
-     */
+ * 邮件消费者
+ * 监听RabbitMQ队列，异步发送各类邮件
+ */
 @Log4j2
-@RestController
+@Component
 @RequiredArgsConstructor
 public class EmailConsumer {
 

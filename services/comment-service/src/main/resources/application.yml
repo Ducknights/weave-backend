@@ -1,10 +1,12 @@
 spring:
+  profiles:
+    active: dev
   application:
     name: comment-service
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: ${NACOS_SERVER_ADDR}
     # Feign 熔断降级
     openfeign:
       circuitbreaker:
@@ -12,8 +14,8 @@ spring:
   # MongoDB 配置
   data:
     mongodb:
-      uri: mongodb://localhost:27017/school
-      database: weave
+      uri: ${MONGODB_URI}
+      database: ${MONGODB_DATABASE}
       auto-index-creation: true
 
 server:

@@ -1,6 +1,7 @@
 package com.weave.auth.service;
 
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.weave.auth.event.UserAuthoritiesRefreshEvent;
 import com.weave.auth.exception.BusinessException;
 import com.weave.auth.mapper.AuthMapper;
@@ -71,7 +72,7 @@ public class AuthService {
                 // 生成Redis键
                 String permissionsKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
                 // 写入用户标识信息到redis
-                redisUtil.set(permissionsKey, authentication.getPrincipal(), Duration.ofMinutes(USER_AUTHORITY_TTL_MINUTES));
+                redisUtil.setFixed(permissionsKey, authentication.getPrincipal(), Duration.ofMinutes(USER_AUTHORITY_TTL_MINUTES));
                 // 获取用户信息
                 UserBriefDto userBriefDto = userFeignClient.getUserBriefById(userId);
                 // 获取用户角色
@@ -112,7 +113,7 @@ public class AuthService {
     public TokenDto getNewAccessToken(String refreshToken) {
         try {
             // 生成访问令牌
-            Long userId = Long.valueOf(JwtUtil.getUserIdFromJWT(refreshToken));
+            Long userId = JwtUtil.getUserIdFromJWT(refreshToken);
             TokenDto dto = getAccessToken(userId);
             // 异步刷新用户权限缓存
             eventPublisher.publishEvent(new UserAuthoritiesRefreshEvent(this, userId));
@@ -128,7 +129,7 @@ public class AuthService {
      */
     public Optional<String> getNewRefreshToken(String refreshToken) {
         if (JwtUtil.getExpirationFromJWT(refreshToken) < TOKEN_ROTATION_THRESHOLD){
-            Long userId = Long.valueOf(JwtUtil.getUserIdFromJWT(refreshToken));
+            Long userId = JwtUtil.getUserIdFromJWT(refreshToken);
             return Optional.of(getRefreshToken(userId));
         }
         return Optional.empty();
@@ -180,7 +181,7 @@ public class AuthService {
         if (Boolean.FALSE.equals(redisUtil.hasKey(key))){
             throw new BusinessException(AuthApiStatus.CODE_EXPIRED);
         }
-        Integer code = redisUtil.get(key, Integer.class);
+        Integer code = redisUtil.get(key, new TypeReference<>() {});
         if (!dto.code().equals(code)){
             throw new BusinessException(AuthApiStatus.CODE_ERROR);
         }
