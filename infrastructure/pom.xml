@@ -14,8 +14,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>common-model</module>
-        <module>common-util</module>
+        <module>common-spring-boot-starter</module>
         <module>redis-spring-boot-starter</module>
         <module>rabbitmq-spring-boot-starter</module>
         <module>mybatis-plus-spring-boot-starter</module>
@@ -34,7 +33,7 @@
         <dependencies>
             <dependency>
                 <groupId>org.example</groupId>
-                <artifactId>common-model</artifactId>
+                <artifactId>common-spring-boot-starter</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
