@@ -82,11 +82,7 @@
         </dependency>
         <dependency>
             <groupId>org.example</groupId>
-            <artifactId>common-model</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.example</groupId>
-            <artifactId>common-util</artifactId>
+            <artifactId>common-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 

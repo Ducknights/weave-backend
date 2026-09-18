@@ -36,6 +36,9 @@ public class EmailService {
     @Value("${app.email.reply-to}")
     private String replyTo;
 
+    @Value("${spring.mail.username}")
+    private String fromAddress;
+
     /**
      * 使用Thymeleaf模板发送HTML邮件
      *
@@ -55,8 +58,9 @@ public class EmailService {
             // 发送HTML邮件
             sendHtmlEmail(to, subject, htmlContent);
         } catch (Exception e) {
-            System.err.println("模板邮件发送失败: " + e.getMessage());
-            throw new RuntimeException("邮件发送失败", e);
+            // 保留原始异常类型，便于区分模板渲染失败与 SMTP 发送失败
+            log.error("模板邮件发送失败, to={}, template={}", to, templateName, e);
+            throw e;
         }
     }
 
@@ -72,11 +76,11 @@ public class EmailService {
             MimeMessage message = javaMailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
             
-            helper.setFrom("2897662424@qq.com", fromName);
+            helper.setFrom(fromAddress, fromName);
             helper.setTo(to);
             helper.setReplyTo(replyTo);
             helper.setSubject(subject);
-            helper.setText(htmlContent, true); // true表示HTML格式
+            helper.setText(htmlContent, true);
             javaMailSender.send(message);
         } catch (MessagingException | UnsupportedEncodingException e) {
             throw new RuntimeException("邮件发送失败", e);
@@ -100,7 +104,7 @@ public class EmailService {
         contextVariables.put("verificationCode", verificationCode);
 
         // 发送模板邮件
-        sendTemplateEmail(email, "邮箱验证码", "email-template", contextVariables);
+        sendTemplateEmail(email, "邮箱验证码", "verificationCode-template", contextVariables);
 
         return verificationCode;
     }

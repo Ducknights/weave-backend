@@ -20,7 +20,7 @@
     <dependencies>
         <dependency>
             <groupId>org.example</groupId>
-            <artifactId>common-model</artifactId>
+            <artifactId>common-spring-boot-starter</artifactId>
         </dependency>
 
         <dependency>

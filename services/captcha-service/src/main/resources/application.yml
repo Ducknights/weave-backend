@@ -1,6 +1,3 @@
-server:
-  port: 4200
-
 spring:
   profiles:
     active: dev
@@ -23,14 +20,11 @@ spring:
         concurrency: 5
         max-concurrency: 10
         prefetch: 1
-    # 连接失败时的容错配置
-    template:
-      retry:
-        enabled: true
-        initial-interval: 1000ms
-        max-attempts: 3
-        max-interval: 10000ms
-        multiplier: 2
+        # 消费失败重试 3 次，重试耗尽后直接抛弃（不重新入队，无死信队列兜底）
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
     # 连接超时配置
     connection-timeout: 3000
     requested-heartbeat: 10s
@@ -62,7 +56,7 @@ spring:
           # 启用SSL
           ssl:
             enable: false
-          # 连接超时时间（毫秒）z
+          # 连接超时时间（毫秒）
           connectiontimeout: 5000
           # 读取超时时间（毫秒）
           timeout: 5000
