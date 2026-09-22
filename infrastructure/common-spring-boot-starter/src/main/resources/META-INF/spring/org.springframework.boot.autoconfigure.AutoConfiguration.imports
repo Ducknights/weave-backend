@@ -1,0 +1,2 @@
+com.weave.model.auto.CommonModelAutoConfiguration
+com.weave.model.auto.CommonOpenApiAutoConfiguration
