@@ -3,6 +3,9 @@ target/
 */target/
 **/target/
 
+# 构建产物
+*.jar
+
 # IDE 相关
 .idea/
 .trae
