@@ -1,145 +1,186 @@
 package com.weave.redis.util;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.SneakyThrows;
-import com.weave.redis.constant.CacheNullValue;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import com.weave.redis.util.handler.JsonRedisHandler;
+import com.weave.redis.util.handler.SetRedisHandler;
+import com.weave.redis.util.handler.StringRedisHandler;
+import com.weave.redis.util.handler.ZSetRedisHandler;
+import lombok.RequiredArgsConstructor;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
+@RequiredArgsConstructor
 public class RedisUtil {
 
-    private final StringRedisTemplate stringRedisTemplate;
-    private final ObjectMapper objectMapper;
+    private final StringRedisHandler stringRedisHandler;
+    private final SetRedisHandler setRedisHandler;
+    private final ZSetRedisHandler zSetRedisHandler;
+    private final JsonRedisHandler jsonRedisHandler;
 
-    public RedisUtil(StringRedisTemplate redisTemplate,
-                     @Qualifier("redisObjectMapper") ObjectMapper objectMapper) {
-        this.stringRedisTemplate = redisTemplate;
-        this.objectMapper = objectMapper;
+    /**
+     * 添加
+     */
+    public <T> void set(String key, T value, Duration duration, boolean isRandom) {
+        stringRedisHandler.set(key, value, duration, isRandom);
     }
 
     /**
-     * 设置缓存，自动序列化对象为JSON字符串
+     * 批量添加
      */
-    public <T> void set(String key, T value) {
-        try {
-            String json = objectMapper.writeValueAsString(value);
-            stringRedisTemplate.opsForValue().set(key, json);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    public <T> void set(Map<String, T> map, Duration duration, boolean isRandom) {
+        stringRedisHandler.set(map, duration, isRandom);
     }
 
     /**
-     * 设置缓存，自动序列化对象为JSON字符串，并设置过期时间(默认单位为秒)
+     * 添加空值
      */
-    public <T> void set(String key, T value, Duration duration) {
-        try {
-            String json = objectMapper.writeValueAsString(value);
-            stringRedisTemplate.opsForValue().set(key, json, duration);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
+    public void setNullValue(String key, Duration duration) {
+        stringRedisHandler.setNullValue(key, duration);
     }
 
     /**
-     * 获取缓存，自动将JSON字符串反序列化为对象
+     * 获取
      */
-    @SneakyThrows
     public <T> T get(String key, JavaType javaType) {
-        String json = getJson(key);
-        return json == null ? null : objectMapper.readValue(json, javaType);
+        return stringRedisHandler.get(key, javaType);
     }
-
-    @SneakyThrows
-    public <T> T get(String key, Class<T> clazz) {
-        String json = getJson(key);
-        return json == null ? null : objectMapper.readValue(json, clazz);
-    }
-
-    @SneakyThrows
     public <T> T get(String key, TypeReference<T> typeReference) {
-        String json = getJson(key);
-        return json == null ? null : objectMapper.readValue(json, typeReference);
-    }
-
-    private String getJson(String key) {
-        String json = stringRedisTemplate.opsForValue().get(key);
-        if (json == null || CacheNullValue.NULL_VALUE.equals(json)) {return null;}
-        return json;
+        return stringRedisHandler.get(key, typeReference);
     }
 
     /**
-     * 设置缓存，序列化对象(List)为 SET
+     * 批量获取
      */
-    public void setForSet(String key, Set<?> obj, Duration duration) {
-        // 如果对象为空或为空集合，则删除缓存
-        if (obj == null || obj.isEmpty()){
-            this.delete(key);
-            return;
-        }
-        // 将对象转换为字符串数组
-        String[] values = obj.stream()
-                .map(this::convertToString)
-                .filter(Objects::nonNull)
-                .toArray(String[]::new);
-        if (values.length == 0)
-            this.delete(key);
-        // 保存缓存并设置过期时间
-        stringRedisTemplate.opsForSet().add(key, values);
-        stringRedisTemplate.expire(key, duration);
-    }
-    @SneakyThrows
-    private String convertToString(Object item) {
-        if (item instanceof String) return (String) item;
-        if (item instanceof Number) return String.valueOf(item);
-        return objectMapper.writeValueAsString(item);
+    public <T> Map<String, T> get(List<String> keys, TypeReference<T> typeReference) {
+        return stringRedisHandler.get(keys, typeReference);
     }
 
     /**
-      * 设置缓存，序列化对象为 Hash（确保对象中没有嵌套对象）
-     */
-    public <T> void setForHash(String key, T obj, Duration duration) {
-        Map<String, Object> map = objectMapper.convertValue(obj, new TypeReference<>() {});
-        stringRedisTemplate.opsForHash().putAll(key, map);
-        stringRedisTemplate.expire(key, duration);
-    }
-
-    public void setForHash(String key, Map<String, Object> map, Duration duration) {
-        stringRedisTemplate.opsForHash().putAll(key, map);
-        stringRedisTemplate.expire(key, duration);
-    }
-
-    /**
-     * 获取缓存，反序列化 Hash 为对象
-     */
-    public <T> T getForHash(String key, Class<T> clazz) {
-        Map<Object, Object> map = stringRedisTemplate.opsForHash().entries(key);
-        return objectMapper.convertValue(map, clazz);
-    }
-
-    public Map<Object, Object> getForHash(String key) {
-        return stringRedisTemplate.opsForHash().entries(key);
-    }
-
-    /**
-     * 判断缓存是否存在
+     * 判断是否存在
      */
     public boolean hasKey(String key) {
-        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
+        return stringRedisHandler.hasKey(key);
     }
 
     /**
-     * 删除缓存
+     * 删除
      */
     public void delete(String key) {
-        stringRedisTemplate.delete(key);
+        stringRedisHandler.delete(key);
     }
+
+    /**
+     * 添加到SET
+     */
+    public <T> void addToSet(String key, T obj, Duration duration) {
+        setRedisHandler.addToSet(key, obj, duration);
+    }
+
+    /**
+     * 从SET中移除
+     */
+    public void removeFromSet(String cacheKey, Object item, Duration duration) {
+        setRedisHandler.removeFromSet(cacheKey, item, duration);
+    }
+
+    /**
+     * 获取SET的并集
+     */
+    public Set<String> getUnion(String key1, String key2) {
+        return setRedisHandler.getUnion(key1, key2);
+    }
+
+    /**
+     * 获取SET的交集
+     */
+    public Set<String> getIntersection(String key1, String key2) {
+        return setRedisHandler.getIntersection(key1, key2);
+    }
+
+    /**
+     * 获取SET的差集
+     */
+    public Set<String> getDifference(String key1, String key2) {
+        return setRedisHandler.getDifference(key1, key2);
+    }
+
+    /**
+     * 获取SET的成员
+     */
+    public Set<String> getMembersFromSet(String key) {
+        return setRedisHandler.getMembersFromSet(key);
+    }
+
+    /**
+     * 判断SET中是否存在该成员
+     */
+    public Boolean isMember(String cacheKey, Object item) {
+        return setRedisHandler.isMember(cacheKey, item);
+    }
+
+    /**
+     * 添加到ZSET
+     */
+    public <T> void addToZSet(String key, Map<T, Double> membersWithScores, Duration duration) {
+        zSetRedisHandler.addToZSet(key, membersWithScores, duration);
+    }
+
+    public List<String> getMembersFromZSetWithCursor(String key, long limit, boolean isDesc) {
+        return zSetRedisHandler.getMembersFromZSet(key, limit, isDesc);
+    }
+
+    /**
+     * 获取ZSET的成员
+     */
+    public <T> List<String> getMembersFromZSetWithCursor(String key, T cursor, long limit, boolean isDesc) {
+        return zSetRedisHandler.getMembersFromZSetWithCursor(key, cursor, limit, isDesc);
+    }
+
+    /**
+     * 从ZSET中移除
+     */
+    public <T> void removeFromZSet(String key, T obj, Duration duration) {
+        zSetRedisHandler.removeFromZSet(key, obj, duration);
+    }
+
+    /**
+     * 添加到JSON
+     */
+    public <T> void setForRedisJson(String key, T obj, Duration duration) {
+        jsonRedisHandler.setForRedisJson(key, obj, duration);
+    }
+
+    /**
+     * 批量添加
+     */
+    public <T> void setForRedisJson(Map<String, T> map, Duration duration) {
+        jsonRedisHandler.setForRedisJson(map, duration);
+    }
+
+    /**
+     * 获取
+     */
+    public <T> T getForRedisJson(String key, TypeReference<T> typeReference) {
+        return jsonRedisHandler.getForRedisJson(key, typeReference);
+    }
+
+    /**
+     * 批量获取
+     */
+    public <T> Map<String, T> getForRedisJson(List<String> keys, TypeReference<T> typeReference) {
+        return jsonRedisHandler.getForRedisJson(keys, typeReference);
+    }
+
+    /**
+     * 增加一个 json对象的字段的数字值
+     */
+    public void incrementHash(String key, String field, long delta) {
+        jsonRedisHandler.incrementHash(key, field, delta);
+    }
+
+    // TODO: Hash
 }

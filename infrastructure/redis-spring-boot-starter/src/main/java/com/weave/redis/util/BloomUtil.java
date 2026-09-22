@@ -11,24 +11,15 @@ import org.springframework.beans.factory.annotation.Qualifier;
  * 注意：帖子/用户 ID 是 Long，评论 ID 是字符串。三个过滤器各自的泛型不同，
  * 因此 ObjectProvider 的泛型参数必须分别匹配，不能统一用一个 <Long>。
  */
+@RequiredArgsConstructor
 public class BloomUtil {
 
+    @Qualifier("userBloomFilter")
     private final ObjectProvider<RBloomFilter<Long>> userBloomFilterProvider;
+    @Qualifier("postBloomFilter")
     private final ObjectProvider<RBloomFilter<Long>> postBloomFilterProvider;
+    @Qualifier("commentBloomFilter")
     private final ObjectProvider<RBloomFilter<String>> commentBloomFilterProvider;
-
-    public BloomUtil(
-            @Qualifier("userBloomFilter")
-            ObjectProvider<RBloomFilter<Long>> userBloomFilterProvider,
-            @Qualifier("postBloomFilter")
-            ObjectProvider<RBloomFilter<Long>> postBloomFilterProvider,
-            @Qualifier("commentBloomFilter")
-            ObjectProvider<RBloomFilter<String>> commentBloomFilterProvider
-    ) {
-        this.userBloomFilterProvider = userBloomFilterProvider;
-        this.postBloomFilterProvider = postBloomFilterProvider;
-        this.commentBloomFilterProvider = commentBloomFilterProvider;
-    }
 
     // —— 通用方法（泛型，过滤器未启用 / 目标为 null 时保守放行 true）——
 

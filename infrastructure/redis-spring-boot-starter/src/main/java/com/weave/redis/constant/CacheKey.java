@@ -1,7 +1,6 @@
 package com.weave.redis.constant;
 
 public class CacheKey {
-    private static final String KEY_SEPARATOR = ":";
     // 用户权限缓存区域
     public static final String USER_AUTHORITY = "user:authorities";
     // 用户简单信息缓存区域
@@ -34,12 +33,18 @@ public class CacheKey {
     public static final String FILE_URL = "file:url";
     // 会话列表缓存区域
     public static final String CONVERSATION = "conversation";
-
-    public static String buildCacheKey(String prefix, Object identifier) {
-        if (prefix != null && identifier != null) {
-            return prefix + KEY_SEPARATOR + identifier;
-        }else {
-            throw new IllegalArgumentException("前缀和标识符不能为空");
-        }
-    }
+    // 帖子评论缓存区域
+    public static final String POST_COMMENTS_NEW = "post:comments:new";
+    // 评论过滤屏蔽+拉黑 IDs 缓存区域
+    public static final String COMMENT_FILTER_IDS = "comment:filter:ids";
+    // 评论分布式锁
+    public static final String COMMENT_LOCK = "comment:lock";
+    /** Redis中存储帖子相似度的key前缀 */
+    public static final String SIMILAR_POST_KEY = "similar:post";
+    /** 布隆过滤器：用户ID */
+    public static final String BLOOM_USER_FILTER = "bloom:user";
+    /** 布隆过滤器：帖子ID */
+    public static final String BLOOM_POST_FILTER = "bloom:post";
+    /** 布隆过滤器：评论ID */
+    public static final String BLOOM_COMMENT_FILTER = "bloom:comment";
 }
