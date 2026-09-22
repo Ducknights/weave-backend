@@ -3,11 +3,13 @@ package com.weave.auth.model.enums;
 import lombok.Getter;
 import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public enum AuthApiStatus implements ApiStatus {
     LOGIN_SUCCESS(200,"登录成功"),
-    LOGIN_FAILED(401,"登录失败"),
+    LOGIN_FAILED(401,"登录失败，用户名或密码错误"),
     REGISTER_SUCCESS(200,"注册成功"),
     REGISTER_FAILED(409,"注册失败"),
     LOGOUT_SUCCESS(200,"登出成功"),
@@ -21,15 +23,10 @@ public enum AuthApiStatus implements ApiStatus {
     CODE_ERROR(400, "验证码错误"),
     LOGOUT_FAILED(401, "登出失败"),
     TOKEN_GENERATE_FAILED(500, "令牌生成失败"),
-    USER_NOT_FOUND(404, "用户未找到");
+    SYSTEM_ERROR(500, "系统错误");
 
     private final int code;
     private final String msg;
-
-    AuthApiStatus(int code, String msg) {
-        this.code = code;
-        this.msg = msg;
-    }
 
     public ApiResult<Void> response() {
         return response(null);

@@ -1,7 +1,6 @@
 package com.weave.auth.controller;
 
 import com.weave.auth.model.dto.*;
-import com.weave.util.JwtUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -34,22 +33,15 @@ public class AuthController {
      */
     @PostMapping("/login")
     public ResponseEntity<ApiResult<LoginResDto>> login(@Valid @NotNull @RequestBody ApiRequestDto apiRequestDto) {
-        // 验证登录，并返回用户信息
-        UserDto userDto = authService.login(apiRequestDto);
-        // 获取访问令牌
-        TokenDto tokenDto = authService.getAccessToken(userDto.getId());
-        // 获取刷新令牌（httponly，7天有效期）
-        String refreshToken = authService.getRefreshToken(userDto.getId());
-        ResponseCookie cookie = ResponseCookie.from(Header.REFRESH_TOKEN, refreshToken)
+        LoginResult loginResult = authService.login(apiRequestDto);
+        ResponseCookie cookie = ResponseCookie.from(Header.REFRESH_TOKEN, loginResult.refreshToken())
                 .httpOnly(true)
                 .path(REFRESH_PATH)
                 .maxAge(REFRESH_TOKEN_EXPIRE)
                 .build();
-        // 组装登录结果
-        LoginResDto loginResDto = new LoginResDto(tokenDto, userDto);
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(AuthApiStatus.LOGIN_SUCCESS.response(loginResDto));
+                .body(AuthApiStatus.LOGIN_SUCCESS.response(loginResult.loginResDto()));
     }
 
     /**
@@ -78,9 +70,7 @@ public class AuthController {
      */
     @PostMapping("/logout")
     public ResponseEntity<ApiResult<Void>> logout(@CookieValue(value = Header.REFRESH_TOKEN) String refreshToken) {
-        Long userId = JwtUtil.getUserIdFromJWT(refreshToken);
-        // 清除当前用户的登录信息
-        authService.logout(userId);
+        authService.logout(refreshToken);
         // 清除刷新令牌
         ResponseCookie cookie = ResponseCookie.from(Header.REFRESH_TOKEN, "")
                 .httpOnly(true)

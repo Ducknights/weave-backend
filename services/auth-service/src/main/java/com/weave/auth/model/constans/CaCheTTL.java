@@ -13,12 +13,7 @@ public class CaCheTTL {
     public static final int REFRESH_TOKEN_TTL_MILLIS = 1000 * 60 * 60 * 24 * 7; // 7天 = 1000 * 60 * 60 * 24 * 7 毫秒
 
     /**
-     * 用户权限缓存过期时间：130分钟
-     */
-    public static final long USER_AUTHORITY_TTL_MINUTES = 60 * 130; // 缓存用户权限过期时间: 130分钟 = 60 * 130 秒
-
-    /**
-     * 令牌轮换阈值
+     * 令牌轮换阈值：2天
      */
     public static final int TOKEN_ROTATION_THRESHOLD = 1000 * 60 * 60 * 24 * 2; // 2天 = 1000 * 60 * 60 * 24 * 2 毫秒
 

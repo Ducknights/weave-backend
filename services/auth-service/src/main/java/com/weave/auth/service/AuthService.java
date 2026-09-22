@@ -2,35 +2,31 @@ package com.weave.auth.service;
 
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.weave.auth.event.UserAuthoritiesRefreshEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.weave.auth.exception.BusinessException;
 import com.weave.auth.mapper.AuthMapper;
 import com.weave.auth.model.dto.*;
 import com.weave.auth.model.enums.AuthApiStatus;
+import com.weave.model.model.dto.AuthUserDto;
+import com.weave.model.model.dto.UserDetailDto;
+import com.weave.model.util.CacheKeyUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import com.weave.auth.feign.UserFeignClient;
-import com.weave.auth.model.dto.CustomUserDetails;
 import com.weave.redis.constant.CacheKey;
 import com.weave.model.model.dto.UserBriefDto;
 import com.weave.rabbitmq.util.MQUtil;
-import com.weave.util.JwtUtil;
+import com.weave.model.util.JwtUtil;
 import com.weave.redis.util.RedisUtil;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Duration;
-import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -41,59 +37,60 @@ import static com.weave.auth.model.constans.CaCheTTL.*;
 @Transactional
 @RequiredArgsConstructor
 public class AuthService {
-    private final AuthenticationManager authenticationManager;
-    private final SecurityUserDetailsService service;
-    private final PasswordEncoder passwordEncoder;
+
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final AuthMapper authMapper;
     private final UserFeignClient userFeignClient;
     private final MQUtil mqUtil;
+    private final ObjectMapper objectMapper;
     private final RedisUtil redisUtil;
+    private final JwtUtil jwtUtil;
     private final RedissonClient redissonClient;
-    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 登录
      */
-    public UserDto login(ApiRequestDto apiRequestDto) {
+    public LoginResult login(ApiRequestDto apiRequestDto) {
         try {
-            // 使用Spring Security进行认证
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(
-                            apiRequestDto.email(),
-                            apiRequestDto.password()
-                    )
-            );
-            // 生成JWT令牌
-            if (authentication.isAuthenticated()) {
-                // 设置认证上下文
-                SecurityContextHolder.getContext().setAuthentication(authentication);
-                // 获取用户ID
-                Long userId = ((CustomUserDetails) authentication.getPrincipal()).getUserId();
-                // 生成Redis键
-                String permissionsKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
-                // 写入用户标识信息到redis
-                redisUtil.setFixed(permissionsKey, authentication.getPrincipal(), Duration.ofMinutes(USER_AUTHORITY_TTL_MINUTES));
-                // 获取用户信息
-                UserBriefDto userBriefDto = userFeignClient.getUserBriefById(userId);
-                // 获取用户角色
-                List<String> roleNames = ((CustomUserDetails) authentication.getPrincipal()).getRoles();
-                return new UserDto(userId, userBriefDto.getName(), userBriefDto.getAvatar(), roleNames);
+            // 查询用户并校验密码
+            CustomUserDetails customUserDetails = authMapper.selectUserDetailsByEmail(apiRequestDto.email());
+            if (customUserDetails == null
+                    || !passwordEncoder.matches(apiRequestDto.password(), customUserDetails.getPassword())) {
+                throw new BusinessException(AuthApiStatus.LOGIN_FAILED);
             }
+
+            // 构建JWT载荷
+            UserDetailDto userDetailDto = UserDetailDto.builder()
+                    .userId(customUserDetails.getUserId())
+                    .roles(customUserDetails.getRoles())
+                    .authorities(customUserDetails.getAuthorities())
+                    .build();
+            log.info("用户ID: {}登录成功", userDetailDto);
+            // 签发令牌
+            TokenDto tokenDto = getAccessToken(userDetailDto);
+            String refreshToken = getRefreshToken(userDetailDto);
+            // 获取用户基本信息
+            UserBriefDto userBriefDto = userFeignClient.getUserBriefById(customUserDetails.getUserId());
+            UserDto userDto = new UserDto(userBriefDto.getId(), userBriefDto.getName(), userBriefDto.getAvatar(), customUserDetails.getRoles());
+            return new LoginResult(new LoginResDto(tokenDto, userDto), refreshToken);
+        } catch (BusinessException e) {
+            log.warn("登录失败: {}", e.getMessage());
+            throw e;
         } catch (Exception e) {
-            log.error("登录失败: {}", e.getMessage());
-            throw new BusinessException(AuthApiStatus.LOGIN_FAILED);
+            log.error("登录失败", e);
+            throw new BusinessException(AuthApiStatus.SYSTEM_ERROR);
         }
-        throw new BusinessException(AuthApiStatus.LOGIN_FAILED);
     }
 
     /**
      * 获取访问令牌
      */
-    public TokenDto getAccessToken(Long userId) {
-        // 生成Redis键
-        String permissionsKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
-        // 生成JWT令牌
-        String access_token = JwtUtil.generateJwtToken(permissionsKey, ACCESS_TOKEN_TTL_MILLIS);
+    @SneakyThrows
+    public TokenDto getAccessToken(UserDetailDto userDetails) {
+        Map<String, Object> claims = objectMapper.convertValue(userDetails, new TypeReference<>() {});
+        log.info("claims = {}", claims);
+        // 生成JWT访问令牌
+        String access_token = jwtUtil.generateJwtToken(userDetails.getUserId(), claims, ACCESS_TOKEN_TTL_MILLIS);
         // 构造返回DTO
         return new TokenDto(access_token, ACCESS_TOKEN_TTL_MILLIS);
     }
@@ -101,10 +98,11 @@ public class AuthService {
     /**
      * 获取刷新令牌
      */
-    public String getRefreshToken(Long userId) {
-        // 生成Redis键
-        String permissionsKey = CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId);
-        return JwtUtil.generateJwtToken(permissionsKey,REFRESH_TOKEN_TTL_MILLIS);
+    @SneakyThrows
+    public String getRefreshToken(UserDetailDto userDetails) {
+        Map<String, Object> claims = objectMapper.convertValue(userDetails, new TypeReference<>() {});
+        // 生成JWT刷新令牌
+        return jwtUtil.generateJwtToken(userDetails.getUserId(), claims, REFRESH_TOKEN_TTL_MILLIS);
     }
 
     /**
@@ -112,13 +110,10 @@ public class AuthService {
      */
     public TokenDto getNewAccessToken(String refreshToken) {
         try {
-            // 生成访问令牌
-            Long userId = JwtUtil.getUserIdFromJWT(refreshToken);
-            TokenDto dto = getAccessToken(userId);
-            // 异步刷新用户权限缓存
-            eventPublisher.publishEvent(new UserAuthoritiesRefreshEvent(this, userId));
-            // 3. 构造返回DTO
-            return dto;
+            // 解析刷新令牌得到用户信息
+            UserDetailDto userDetailDto = jwtUtil.getUserDetailFromJWT(refreshToken);
+            // 构造返回DTO
+            return getAccessToken(userDetailDto);
         }catch (Exception e){
             throw new BusinessException(AuthApiStatus.TOKEN_GENERATE_FAILED);
         }
@@ -127,12 +122,18 @@ public class AuthService {
     /**
      * 获取新刷新令牌
      */
+    @SneakyThrows
     public Optional<String> getNewRefreshToken(String refreshToken) {
-        if (JwtUtil.getExpirationFromJWT(refreshToken) < TOKEN_ROTATION_THRESHOLD){
-            Long userId = JwtUtil.getUserIdFromJWT(refreshToken);
-            return Optional.of(getRefreshToken(userId));
+        try {
+            // 如果refresh token 还有足够长的时间有效期，则不进行刷新
+            if (jwtUtil.getExpirationFromJWT(refreshToken) > TOKEN_ROTATION_THRESHOLD) {
+                return Optional.empty();
+            }
+            UserDetailDto userDetailDto = jwtUtil.getUserDetailFromJWT(refreshToken);
+            return Optional.of(getRefreshToken(userDetailDto));
+        } catch (Exception e) {
+            throw new BusinessException(AuthApiStatus.TOKEN_GENERATE_FAILED);
         }
-        return Optional.empty();
     }
 
     /**
@@ -141,7 +142,7 @@ public class AuthService {
     public void sendCode(ApiRequestDto apiRequestDto) {
         String email = apiRequestDto.email();
         // Redisson 分布式锁：1分钟内不可重试
-        String lockKey = CacheKey.buildLockKey(CacheKey.CAPTCHA, email);
+        String lockKey = CacheKeyUtil.buildLockKey(CacheKey.CAPTCHA, email);
         RLock lock = redissonClient.getLock(lockKey);
         boolean locked = false;
         try {
@@ -177,7 +178,7 @@ public class AuthService {
      */
     public void verifyCode(VerifyCodeDto dto) {
         // 1. 验证验证码
-        String key = CacheKey.buildCacheKey(CacheKey.CAPTCHA, dto.email());
+        String key = CacheKeyUtil.buildCacheKey(CacheKey.CAPTCHA, dto.email());
         if (Boolean.FALSE.equals(redisUtil.hasKey(key))){
             throw new BusinessException(AuthApiStatus.CODE_EXPIRED);
         }
@@ -195,12 +196,16 @@ public class AuthService {
      */
     private void register(VerifyCodeDto dto) {
         try {
-            UserDetails user = User.builder()
-                    .username(dto.email())
-                    .password(passwordEncoder.encode(dto.password()))
-                    .build();
-            service.createUser(user);
-        }catch (Exception e){
+            UserAuthDto userAuthDto = new UserAuthDto();
+            userAuthDto.setEmail(dto.email());
+            userAuthDto.setPassword(passwordEncoder.encode(dto.password()));
+            // 插入用户信息
+            authMapper.insert(userAuthDto);
+            // 插入用户角色，默认角色为普通用户
+            authMapper.insertUserRole(userAuthDto.getId());
+            // 调用用户服务插入用户信息
+            userFeignClient.createUser(new AuthUserDto(userAuthDto.getId(), userAuthDto.getEmail()));
+        } catch (Exception e) {
             throw new BusinessException(AuthApiStatus.REGISTER_FAILED);
         }
     }
@@ -208,12 +213,12 @@ public class AuthService {
     /**
      * 登出
      */
-    public void logout(Long userId){
+    @SneakyThrows
+    public void logout(String refreshToken){
         try {
-            redisUtil.delete(CacheKey.buildCacheKey(CacheKey.USER_AUTHORITY, userId));
-            redisUtil.delete(CacheKey.buildCacheKey(CacheKey.USER_ONLINE, userId));
-            SecurityContextHolder.clearContext();
-            log.info("用户ID: {}已登出", userId);
+            UserDetailDto userDetailDto = jwtUtil.getUserDetailFromJWT(refreshToken);
+            redisUtil.delete(CacheKeyUtil.buildCacheKey(CacheKey.USER_ONLINE, userDetailDto.getUserId()));
+            log.info("用户ID: {}已登出", userDetailDto.getUserId());
         } catch (Exception e) {
             throw new BusinessException(AuthApiStatus.LOGOUT_FAILED);
         }

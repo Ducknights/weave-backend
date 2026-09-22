@@ -1,6 +1,5 @@
 package com.weave.auth.exception;
 
-
 import com.weave.model.model.ApiResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
