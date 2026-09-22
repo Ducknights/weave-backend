@@ -1,5 +1,7 @@
 package com.weave.security.auto;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weave.model.util.SignatureUtil;
 import com.weave.redis.util.RedisUtil;
 import com.weave.security.filter.HeaderFilter;
 import com.weave.security.provider.HeaderAuthenticationProvider;
@@ -25,8 +27,8 @@ public class MicroserviceSecurityConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public HeaderFilter headerFilter(RedisUtil redisUtil) {
-        return new HeaderFilter(redisUtil);
+    public HeaderFilter headerFilter(ObjectMapper objectMapper, SignatureUtil signatureUtil) {
+        return new HeaderFilter(objectMapper, signatureUtil);
     }
 
     @Bean

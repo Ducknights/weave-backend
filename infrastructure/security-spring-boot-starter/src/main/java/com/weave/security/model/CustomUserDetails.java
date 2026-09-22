@@ -1,7 +1,6 @@
 package com.weave.security.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,30 +19,24 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 public class CustomUserDetails implements UserDetails {
     private Long userId;
-    private String username;
     private List<String> roles;
-
-    @JsonProperty("authorities")
-    private List<String> permissions;
+    private List<String> authorities;
 
     @Override
     @JsonIgnore
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        if (roles == null && permissions == null) {
+        if (roles == null && authorities == null) {
             return Collections.emptyList();
         }
-        List<GrantedAuthority> roleAuthorities = roles != null
-                ? roles.stream()
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                        .collect(Collectors.toList())
+        // 处理角色
+        List<GrantedAuthority> roleAuth = roles != null
+                ? roles.stream().map(r -> new SimpleGrantedAuthority("ROLE_" + r)).collect(Collectors.toList())
                 : Collections.emptyList();
-        List<GrantedAuthority> permissionAuthorities = permissions != null
-                ? permissions.stream()
-                        .map(SimpleGrantedAuthority::new)
-                        .collect(Collectors.toList())
+        // 处理权限
+        List<GrantedAuthority> permAuth = authorities != null
+                ? authorities.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList())
                 : Collections.emptyList();
-        return Stream.concat(roleAuthorities.stream(), permissionAuthorities.stream())
-                .collect(Collectors.toList());
+        return Stream.concat(roleAuth.stream(), permAuth.stream()).toList();
     }
 
     @Override
@@ -53,8 +46,9 @@ public class CustomUserDetails implements UserDetails {
     }
 
     @Override
+    @JsonIgnore
     public String getUsername() {
-        return username;
+        return null;
     }
 
     @Override

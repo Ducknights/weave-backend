@@ -21,4 +21,16 @@ public class SecurityUtils {
         }
         return null;
     }
+
+    /**
+    * 判断当前登录用户是否拥有指定角色
+    */
+    public static boolean hasRole(String role) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || !authentication.isAuthenticated()) {
+        return false;
+    }
+    return authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_" + role));
+    }
 }

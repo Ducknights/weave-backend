@@ -12,6 +12,7 @@ public class HeaderAuthenticationToken extends AbstractAuthenticationToken {
     public HeaderAuthenticationToken(CustomUserDetails userDetails) {
         super(userDetails.getAuthorities());
         this.userDetails = userDetails;
+        // 设置认证状态为true
         setAuthenticated(true);
     }
 
