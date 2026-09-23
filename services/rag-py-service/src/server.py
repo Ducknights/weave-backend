@@ -15,16 +15,6 @@ from src.pipeline import rag_pipeline
 class RAGServiceServicer(rag_service_pb2_grpc.RAGServiceServicer):
     """RAG gRPC 服务实现"""
 
-    def Ask(self, request, context):
-        question = request.question.strip()
-        if not question:
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("question 不能为空")
-            return rag_service_pb2.QueryResponse()
-
-        answer = rag_pipeline.ask(question)
-        return rag_service_pb2.QueryResponse(answer=answer)
-
     def AskStream(self, request, context):
         question = request.question.strip()
         if not question:
