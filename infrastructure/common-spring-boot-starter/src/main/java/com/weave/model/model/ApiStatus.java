@@ -10,7 +10,11 @@ public interface ApiStatus {
 
     String getMsg();
 
-    ApiResult<?> response();
+    default ApiResult<Void> response() {
+        return response(null);
+    }
 
-    <T> ApiResult<T> response(T data);
+    default <T> ApiResult<T> response(T data) {
+        return new ApiResult<>(getCode(), getMsg(), data);
+    }
 }

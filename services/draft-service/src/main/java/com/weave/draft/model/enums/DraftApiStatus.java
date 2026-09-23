@@ -1,13 +1,14 @@
 package com.weave.draft.model.enums;
 
 import lombok.Getter;
-import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 草稿服务 API 状态枚举
  */
 @Getter
+@RequiredArgsConstructor
 public enum DraftApiStatus implements ApiStatus {
     // 成功状态
     SUCCESS(200, "成功"),
@@ -28,6 +29,7 @@ public enum DraftApiStatus implements ApiStatus {
 
     // 资源不存在
     DRAFT_NOT_FOUND(404, "草稿不存在"),
+    NO_PENDING_DRAFT(404, "当前没有可拉取的待审核帖子"),
 
     // 业务逻辑错误
     DRAFT_ALREADY_EXISTS(409, "每个用户只能拥有一条草稿"),
@@ -37,17 +39,4 @@ public enum DraftApiStatus implements ApiStatus {
 
     private final int code;
     private final String msg;
-
-    DraftApiStatus(int code, String msg) {
-        this.code = code;
-        this.msg = msg;
-    }
-
-    public ApiResult<Void> response() {
-        return response(null);
-    }
-
-    public <T> ApiResult<T> response(T data) {
-        return new ApiResult<>(code, msg, data);
-    }
 }

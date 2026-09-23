@@ -1,7 +1,6 @@
 package com.weave.auth.model.enums;
 
 import lombok.Getter;
-import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
 import lombok.RequiredArgsConstructor;
 
@@ -27,12 +26,4 @@ public enum AuthApiStatus implements ApiStatus {
 
     private final int code;
     private final String msg;
-
-    public ApiResult<Void> response() {
-        return response(null);
-    }
-
-    public <T> ApiResult<T> response(T data) {
-        return new ApiResult<>(code, msg, data);
-    }
 }

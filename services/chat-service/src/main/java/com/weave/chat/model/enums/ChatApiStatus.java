@@ -1,10 +1,11 @@
 package com.weave.chat.model.enums;
 
 import lombok.Getter;
-import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public enum ChatApiStatus implements ApiStatus {
 
     GET_CONVERSATIONS_SUCCESS(200, "获取会话列表成功"),
@@ -18,17 +19,4 @@ public enum ChatApiStatus implements ApiStatus {
 
     private final int code;
     private final String msg;
-
-    ChatApiStatus(int code, String msg) {
-        this.code = code;
-        this.msg = msg;
-    }
-
-    public ApiResult<Void> response() {
-        return response(null);
-    }
-
-    public <T> ApiResult<T> response(T data) {
-        return new ApiResult<>(code, msg, data);
-    }
 }

@@ -1,7 +1,6 @@
 package com.weave.comment.model.enums;
 
 import lombok.Getter;
-import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
 
 @Getter
@@ -34,6 +33,7 @@ public enum CommentApiStatus implements ApiStatus {
     // 业务逻辑错误
     DUPLICATE_COMMENT(409, "重复评论"),
     DUPLICATE_LIKE(409, "重复点赞"),
+    NOT_LIKED(400, "尚未点赞该评论"),
     DELETED_COMMENT_CANNOT_EDIT(400, "已删除的评论无法编辑"),
     
     // 系统错误
@@ -53,13 +53,5 @@ public enum CommentApiStatus implements ApiStatus {
     CommentApiStatus(int code, String msg) {
         this.code = code;
         this.msg = msg;
-    }
-
-    public ApiResult<Void> response() {
-        return response(null);
-    }
-
-    public <T> ApiResult<T> response(T data) {
-        return new ApiResult<>(code, msg, data);
     }
 }

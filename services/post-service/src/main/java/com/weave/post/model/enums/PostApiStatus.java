@@ -1,7 +1,6 @@
 package com.weave.post.model.enums;
 
 import lombok.Getter;
-import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
 
 /**
@@ -63,13 +62,5 @@ public enum PostApiStatus implements ApiStatus {
     PostApiStatus(int code, String msg) {
         this.code = code;
         this.msg = msg;
-    }
-
-    public ApiResult<Void> response() {
-        return response(null);
-    }
-
-    public <T> ApiResult<T> response(T data) {
-        return new ApiResult<>(code, msg, data);
     }
 }

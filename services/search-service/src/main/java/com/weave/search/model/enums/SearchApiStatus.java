@@ -1,11 +1,7 @@
 package com.weave.search.model.enums;
 
 import lombok.Getter;
-import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
-
-import java.util.Collections;
-import java.util.Map;
 
 /**
  * 搜索服务API状态枚举
@@ -46,13 +42,5 @@ public enum SearchApiStatus implements ApiStatus {
     SearchApiStatus(int code, String msg) {
         this.code = code;
         this.msg = msg;
-    }
-
-    public ApiResult<Map<String, Object>> response() {
-        return response(Collections.emptyMap());
-    }
-
-    public <T> ApiResult<T> response(T data) {
-        return new ApiResult<>(code, msg, data);
     }
 }

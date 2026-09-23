@@ -3,7 +3,6 @@ package com.weave.exception;
 import com.weave.model.model.ApiResult;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -31,7 +30,7 @@ public class GlobalExceptionHandler {
      * 处理业务异常 —— 各服务的 BusinessException 均继承 AbstractBusinessException
      */
     @ExceptionHandler(AbstractBusinessException.class)
-    public ResponseEntity<ApiResult<?>> handleBusinessException(AbstractBusinessException e) {
+    public ResponseEntity<ApiResult<Void>> handleBusinessException(AbstractBusinessException e) {
         log.warn("业务异常: {}", e.getMessage());
         return ResponseEntity.status(e.getStatus().getCode())
                 .body(e.getStatus().response());

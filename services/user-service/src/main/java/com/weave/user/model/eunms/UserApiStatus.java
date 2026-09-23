@@ -1,7 +1,6 @@
 package com.weave.user.model.eunms;
 
 import lombok.Getter;
-import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
 
 /**
@@ -60,6 +59,8 @@ public enum UserApiStatus implements ApiStatus {
     PASSWORD_ERROR(401, "密码错误"),
     VERIFICATION_CODE_ERROR(401, "验证码错误"),
     VERIFICATION_CODE_EXPIRED(401, "验证码已过期"),
+    // 重复记录
+    DUPLICATE_RECORD(409, "重复记录"),
     EMAIL_ALREADY_BOUND(409, "该邮箱已被绑定"),
     PHONE_ALREADY_BOUND(409, "该手机号已被绑定"),
 
@@ -123,13 +124,5 @@ public enum UserApiStatus implements ApiStatus {
     UserApiStatus(int code, String msg) {
         this.code = code;
         this.msg = msg;
-    }
-
-    public ApiResult<Void> response() {
-        return response(null );
-    }
-
-    public <T> ApiResult<T> response(T data) {
-        return new ApiResult<>(code, msg, data);
     }
 }

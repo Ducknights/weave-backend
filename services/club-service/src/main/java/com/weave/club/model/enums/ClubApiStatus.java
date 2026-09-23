@@ -1,10 +1,11 @@
 package com.weave.club.model.enums;
 
 import lombok.Getter;
-import com.weave.model.model.ApiResult;
 import com.weave.model.model.ApiStatus;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public enum ClubApiStatus implements ApiStatus {
     GET_SUCCESS(200, "请求成功"),
     GET_FAIL(400, "请求失败"),
@@ -22,16 +23,4 @@ public enum ClubApiStatus implements ApiStatus {
 
     private final int code;
     private final String msg;
-    ClubApiStatus(int code, String msg) {
-        this.code = code;
-        this.msg = msg;
-    }
-
-    public ApiResult<Void> response() {
-        return response(null);
-    }
-
-    public <T> ApiResult<T> response(T data) {
-        return new ApiResult<>(code, msg, data);
-    }
 }
