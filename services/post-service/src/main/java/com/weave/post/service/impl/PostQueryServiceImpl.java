@@ -3,6 +3,7 @@ package com.weave.post.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.weave.model.util.CacheKeyUtil;
 import com.weave.post.exception.BusinessException;
 import com.weave.post.mapper.PostMapper;
 import com.weave.post.model.enums.PostApiStatus;
@@ -60,20 +61,6 @@ public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implemen
     }
 
     /**
-     * 获取推荐帖子
-     */
-    @Override
-    public List<PostDetailVo> getRecommendPosts(Long userId, Integer limit) {
-        // 调用推荐服务获取推荐帖子ID列表
-        List<Long> recommendPostIds = recommendFeignClient.getRecommendations(userId, limit);
-        if (CollectionUtils.isEmpty(recommendPostIds)){
-            throw new BusinessException(PostApiStatus.POST_NOT_FOUND);
-        }
-        // 根据ID列表批量获取帖子
-        return getPostsByIds(recommendPostIds);
-    }
-
-    /**
      * 获取用户隐藏的帖子
      */
     @Override
@@ -99,6 +86,20 @@ public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implemen
         List<Post> posts = postRepository.getPostsFromCacheOrDb(ids);
         // 转换为 PostDetailVo
         return convertToPostDetailVoList(posts);
+    }
+
+    /**
+     * 获取推荐帖子
+     */
+    @Override
+    public List<PostDetailVo> getRecommendPosts(Long userId, Integer limit) {
+        // 调用推荐服务获取推荐帖子ID列表
+        List<Long> recommendPostIds = recommendFeignClient.getRecommendations(userId, limit);
+        if (CollectionUtils.isEmpty(recommendPostIds)){
+            throw new BusinessException(PostApiStatus.POST_NOT_FOUND);
+        }
+        // 根据ID列表批量获取帖子
+        return getPostsByIds(recommendPostIds);
     }
 
     /**
@@ -162,8 +163,8 @@ public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implemen
         String cacheCollectKey;
         // 查询用户点赞和收藏的缓存信息
         if (currentUserId != null){
-            cacheLikeKey = CacheKey.buildCacheKey(CacheKey.USER_LIKED_POSTS, currentUserId);
-            cacheCollectKey = CacheKey.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, currentUserId);
+            cacheLikeKey = CacheKeyUtil.buildCacheKey(CacheKey.USER_LIKED_POSTS, currentUserId);
+            cacheCollectKey = CacheKeyUtil.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, currentUserId);
         } else {
             cacheCollectKey = null;
             cacheLikeKey = null;
@@ -178,7 +179,7 @@ public class PostQueryServiceImpl extends ServiceImpl<PostMapper, Post> implemen
                     boolean isCollected = getStatus(currentUserId,cacheCollectKey, post.getPostId());
                     // 构建返回的帖子详情VO
                     return PostDetailVo.builder()
-                            .id(post.getPostId())
+                            .postId(post.getPostId())
                             .userId(post.getUserId())
                             .username(user != null ? user.getName() : null)
                             .clubId(post.getClubId())

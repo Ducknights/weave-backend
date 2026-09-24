@@ -7,11 +7,12 @@ import com.weave.post.mapper.PostResourceMapper;
 import com.weave.post.model.enums.PostApiStatus;
 import com.weave.post.model.enums.PostStatus;
 import com.weave.post.service.PostStateMachineService;
-import com.weave.redis.annotation.RedisCacheEvent;
+import com.weave.redis.annotation.RedisCacheEvict;
 import com.weave.redis.util.RedisUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.redis.constant.CacheKey;
+import com.weave.model.util.CacheKeyUtil;
 import com.weave.model.constant.PostOperation;
 import com.weave.model.model.dto.SearchDocumentDto;
 import com.weave.model.model.dto.PostActionMessageDto;
@@ -63,10 +64,10 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         postMapper.insert(post);
         Long postId = post.getPostId();
         if (message.getResources() != null) {
-            for (String resource : message.getResources()) {
+            for (String path : message.getResources()) {
                 PostResource postResource = PostResource.builder()
                         .postId(postId)
-                        .resourcePath(resource)
+                        .resourcePath(path)
                         .build();
                 postResourceMapper.insert(postResource);
             }
@@ -86,7 +87,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
      * 更新帖子
      */
     @Override
-    @RedisCacheEvent(value = CacheKey.POST_HASH, key = "#id")
+    @RedisCacheEvict(value = CacheKey.POST_HASH, key = "#id")
     public void updatePost(Long id, Long userId, PostDto postDto) {
         Post post = postMapper.selectById(id);
         if (post == null) {
@@ -107,7 +108,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
      * 删除帖子（状态机驱动: 任意状态 -> DELETED，逻辑删除）
      */
     @Override
-    @RedisCacheEvent(value = CacheKey.POST_HASH, key = "#id")
+    @RedisCacheEvict(value = CacheKey.POST_HASH, key = "#id")
     public void deletePost(Long id, Long userId) {
         Post post = postMapper.selectById(id);
         if (post == null) {
@@ -129,7 +130,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
      * 隐藏帖子: PUBLIC -> HIDDEN
      */
     @Override
-    @RedisCacheEvent(value = CacheKey.POST_HASH, key = "#id")
+    @RedisCacheEvict(value = CacheKey.POST_HASH, key = "#id")
     public void hidePost(Long id, Long userId) {
         Post post = postMapper.selectById(id);
         if (post == null) {
@@ -173,7 +174,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         // 增加帖子的浏览次数
         handlePostAction(userId, postId, PostActionType.VIEW);
         // 添加用户最近浏览（最近浏览功能用）- 使用ZSet按时间排序
-        String userCacheKey = CacheKey.buildCacheKey(CacheKey.USER_VIEWED_POSTS, userId);
+        String userCacheKey = CacheKeyUtil.buildCacheKey(CacheKey.USER_VIEWED_POSTS, userId);
         redisTemplate.opsForZSet().add(userCacheKey, String.valueOf(postId), System.currentTimeMillis());
         // 裁剪ZSet，最多保留最近1000条浏览记录，防止无限增长
         redisTemplate.opsForZSet().removeRange(userCacheKey, 0, -1001);
@@ -187,7 +188,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         // 校验帖子存在且状态允许交互
         validatePost(postId);
         // 检查是否已点赞：查用户点赞缓存集合
-        String likedKey = CacheKey.buildCacheKey(CacheKey.USER_LIKED_POSTS, userId);
+        String likedKey = CacheKeyUtil.buildCacheKey(CacheKey.USER_LIKED_POSTS, userId);
         if (Boolean.TRUE.equals(redisUtil.isMember(likedKey, postId))) {
             // 已点赞直接返回，避免重复计数
             return;
@@ -203,7 +204,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         // 校验帖子存在且状态允许交互
         validatePost(postId);
         // 检查是否已点赞：查用户点赞缓存集合
-        String likedKey = CacheKey.buildCacheKey(CacheKey.USER_LIKED_POSTS, userId);
+        String likedKey = CacheKeyUtil.buildCacheKey(CacheKey.USER_LIKED_POSTS, userId);
         if (!Boolean.TRUE.equals(redisUtil.isMember(likedKey, postId))) {
             // 尚未点赞则直接返回，避免计数变负
             return;
@@ -219,7 +220,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         // 校验帖子存在且状态允许交互
         validatePost(postId);
         // 检查是否已收藏
-        String collectedKey = CacheKey.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, userId);
+        String collectedKey = CacheKeyUtil.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, userId);
         if (Boolean.TRUE.equals(redisUtil.isMember(collectedKey, postId))) {
             return;
         }
@@ -234,7 +235,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
         // 校验帖子存在且状态允许交互
         validatePost(postId);
         // 检查是否已收藏
-        String collectedKey = CacheKey.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, userId);
+        String collectedKey = CacheKeyUtil.buildCacheKey(CacheKey.USER_COLLECTED_POSTS, userId);
         if (!Boolean.TRUE.equals(redisUtil.isMember(collectedKey, postId))) {
             return;
         }
@@ -249,7 +250,7 @@ public class PostCommandServiceImpl extends ServiceImpl<PostMapper, Post> implem
      */
     private void handlePostAction(Long userId, Long postId, PostActionType actionType) {
         // 更新帖子缓存
-        String postCacheKey = CacheKey.buildCacheKey(CacheKey.POST_HASH, postId);
+        String postCacheKey = CacheKeyUtil.buildCacheKey(CacheKey.POST_HASH, postId);
         long delta = actionType.isIncrement() ? 1 : -1;
         redisUtil.incrementHash(postCacheKey, actionType.getCacheField(), delta);
         // 发送消息到 MQ（异步处理用户行为）
