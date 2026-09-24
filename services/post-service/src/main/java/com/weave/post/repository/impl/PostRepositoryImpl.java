@@ -1,10 +1,9 @@
 package com.weave.post.repository.impl;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weave.model.util.CacheKeyUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import com.weave.redis.constant.CacheKey;
 import com.weave.rabbitmq.constant.MQueue;
 import com.weave.post.mapper.PostMapper;
 import com.weave.post.mapper.PostResourceMapper;
@@ -29,7 +28,6 @@ public class PostRepositoryImpl implements PostRepository {
     private final RedisUtil redisUtil;
     private final PostMapper postMapper;
     private final PostResourceMapper postResourceMapper;
-    private final ObjectMapper objectMapper;
     private final MQUtil mqUtil;
 
     @Override
@@ -43,11 +41,9 @@ public class PostRepositoryImpl implements PostRepository {
         Set<Long> cachedIds = cachedPostsMap.keySet();
 
         // 筛选出未命中缓存的 ID
-        List<Long> needQueryIds = ids.stream()
-                .filter(id -> !cachedIds.contains(id))
-                .collect(Collectors.toList());
+        List<Long> needQueryIds = ids.stream().filter(id -> !cachedIds.contains(id)).collect(Collectors.toList());
 
-        Map<Long, Post> dbPostMap = new HashMap<>();
+        Map<Long, Post> dbPostMap = new LinkedHashMap<>();
         if (!needQueryIds.isEmpty()) {
             // 从数据库查询
             List<Post> dbPosts = postMapper.selectPublishedPostByIds(needQueryIds);
@@ -64,6 +60,7 @@ public class PostRepositoryImpl implements PostRepository {
             // 剩余未找到的id构建空对象
             for (Long id : notFoundIds) {
                 Post emptyPost = Post.buildEmpty(id);
+                dbPostMap.put(id, emptyPost);
                 postsForCache.add(emptyPost);
             }
             // 异步写入缓存
@@ -104,38 +101,36 @@ public class PostRepositoryImpl implements PostRepository {
      * 从缓存批量获取帖子
      */
     private Map<Long, Post> getPostsFromCache(List<Long> postIds) {
-        Map<Long, Post> result = new HashMap<>();
-        for (Long postId : postIds) {
-            String key = CacheKey.buildCacheKey(CacheSpec.PostHash.POST_DETAIL, postId);
-            if (Boolean.TRUE.equals(redisUtil.hasKey(key))) {
-                log.info("从缓存获取帖子：{}", postId);
-                Map<Object, Object> hash = redisUtil.getForHash(key);
-                // 手动处理 resources：Hash 中存的是逗号分隔 String，取出后转为 List
-                Object resourcesRaw = hash.get("resources");
-                hash.remove("resources");
-                Post post = objectMapper.convertValue(hash, Post.class);
-                if (resourcesRaw instanceof String s && !s.isEmpty()) {
-                    post.setResources(Arrays.asList(s.split(",")));
-                }
-                result.put(postId, post);
-            }
+        // 构建缓存 key 列表
+        List<String> keys = postIds.stream()
+                .map(id -> CacheKeyUtil.buildCacheKey(CacheSpec.PostHash.POST_DETAIL, id))
+                .collect(Collectors.toList());
+        // 从缓存获取帖子
+        Map<String, Post> cachePostsMap = redisUtil.getForRedisJson(keys, new TypeReference<>() {});
+        Map<Long, Post> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Post> entry : cachePostsMap.entrySet()) {
+            String key = entry.getKey();
+            Post post = entry.getValue();
+            // 拆解 key 获取帖子 ID
+            Long id = Long.valueOf(CacheKeyUtil.demolishCacheKey(key, CacheSpec.PostHash.POST_DETAIL));
+            result.put(id, post);
         }
         return result;
     }
 
     /**
-     * 批量缓存帖子信息（Hash结构，resources 转为逗号分隔字符串存储）
+     * 批量缓存帖子信息（RedisJson）
      */
     @RabbitListener(queues = MQueue.POST_CACHE_QUEUE)
     public void cachePosts(List<Post> posts) {
-        for (Post post : posts) {
-            String cacheHashKey = CacheKey.buildCacheKey(CacheSpec.PostHash.POST_DETAIL, post.getPostId());
-            Map<String, Object> postMap = objectMapper.convertValue(post, new TypeReference<>() {});
-            // resources 从 List 转为逗号分隔 String，适配 Redis Hash 只支持标量
-            List<String> resources = post.getResources();
-            postMap.put("resources", resources != null && !resources.isEmpty() ? String.join(",", resources) : "");
-            log.info("缓存帖子：{}", post);
-            redisUtil.setForHash(cacheHashKey, postMap, CacheSpec.PostHash.TTL);
+        if (CollectionUtils.isEmpty(posts)) {
+            return;
         }
+        Map<String, Post> postMap = posts.stream()
+                .collect(Collectors.toMap(
+                        post -> CacheKeyUtil.buildCacheKey(CacheSpec.PostHash.POST_DETAIL, post.getPostId()),
+                        post -> post,
+                        (existing, replacement) -> existing));
+        redisUtil.setForRedisJson(postMap, CacheSpec.PostHash.TTL);
     }
 }
