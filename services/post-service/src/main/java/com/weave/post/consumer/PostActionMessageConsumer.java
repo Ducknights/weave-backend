@@ -1,6 +1,7 @@
 package com.weave.post.consumer;
 
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import com.weave.rabbitmq.constant.MQueue;
 import com.weave.model.model.dto.PostActionMessageDto;
@@ -10,13 +11,10 @@ import org.springframework.stereotype.Component;
 
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class PostActionMessageConsumer {
 
     private final PostCommandService postCommandService;
-
-    public PostActionMessageConsumer(PostCommandService postCommandService) {
-        this.postCommandService = postCommandService;
-    }
 
     /**
      * 监听帖子行为消息，异步更新统计数据

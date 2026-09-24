@@ -3,6 +3,7 @@ package com.weave.post.consumer;
 import com.weave.model.model.dto.DraftPublishMessageDto;
 import com.weave.post.service.PostCommandService;
 import com.weave.rabbitmq.constant.MQueue;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
@@ -13,13 +14,10 @@ import org.springframework.stereotype.Component;
  */
 @Component
 @Log4j2
+@RequiredArgsConstructor
 public class DraftPublishMessageConsumer {
 
     private final PostCommandService postCommandService;
-
-    public DraftPublishMessageConsumer(PostCommandService postCommandService) {
-        this.postCommandService = postCommandService;
-    }
 
     @RabbitListener(queues = MQueue.DRAFT_PUBLISH_QUEUE)
     public void handleDraftPublish(DraftPublishMessageDto message) {
